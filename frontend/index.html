@@ -356,17 +356,15 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="login-form active" id="form-login">
       <div class="form-group">
         <label class="form-label">Email</label>
-        <input class="form-input" type="email" id="login-email" placeholder="etudiant@dsi.edu" value="demo@dsi.edu"/>
+        <input class="form-input" type="email" id="login-email" placeholder="etudiant@dsi.edu" value=""/>
       </div>
       <div class="form-group">
         <label class="form-label">Mot de passe</label>
-        <input class="form-input" type="password" id="login-password" placeholder="••••••••" value="demo123"/>
+        <input class="form-input" type="password" id="login-password" placeholder="••••••••" value=""/>
       </div>
       <div class="login-error" id="login-err"></div>
       <button class="login-btn" onclick="doLogin()">Se connecter →</button>
-      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted);">
-        Compte démo : <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8eeaebe3e1ceeafde7a0ebeafb">[email&#160;protected]</a> / demo123
-      </div>
+      
     </div>
 
     <!-- Register form -->
@@ -807,6 +805,13 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
 </div>
 
 <script>
+// Prevent Cloudflare email obfuscation from breaking the page
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.__cf_email__').forEach(function(el) {
+    el.parentNode.removeChild(el);
+  });
+});
+
 // ============================================
 // STATE
 // ============================================
