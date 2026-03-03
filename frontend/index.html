@@ -365,7 +365,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="login-error" id="login-err"></div>
       <button class="login-btn" onclick="doLogin()">Se connecter →</button>
       <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted);">
-        Compte démo : demo@dsi.edu / demo123
+        Compte démo : <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8febeae2e0cfebfce6a1eaebfa">[email&#160;protected]</a> / demo123
       </div>
     </div>
 
@@ -755,7 +755,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
           <div style="text-align:center;padding:20px 0">
             <div style="width:80px;height:80px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#000;margin:0 auto 16px" id="profil-avatar">Y</div>
             <div style="font-size:20px;font-weight:700" id="profil-name">Yasmine Benali</div>
-            <div style="color:var(--muted);font-size:13px;margin-top:4px" id="profil-email">yasmine@dsi.edu</div>
+            <div style="color:var(--muted);font-size:13px;margin-top:4px" id="profil-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="93eaf2e0fefafdf6d3f7e0fabdf6f7e6">[email&#160;protected]</a></div>
             <div class="chip green" style="margin-top:10px" id="profil-matricule">DSI-000001</div>
           </div>
           <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:8px">
@@ -797,7 +797,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
   </main>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ============================================
 // STATE
 // ============================================
@@ -833,6 +833,11 @@ function initDemoData() {
 }
 
 // ============================================
+// CONFIG
+// ============================================
+const API_URL = 'https://projet-dsi.up.railway.app';
+
+// ============================================
 // AUTH
 // ============================================
 function switchTab(tab) {
@@ -841,23 +846,60 @@ function switchTab(tab) {
   document.getElementById('form-register').classList.toggle('active', tab==='register');
 }
 
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('login-email').value;
   const password = document.getElementById('login-password').value;
   if (!email || !password) { showErr('login-err','Remplissez tous les champs.'); return; }
-  // Demo auth
-  state.user = { nom:'Benali', prenom:'Yasmine', email, matricule:'DSI-001337' };
-  enterApp();
+
+  const btn = document.querySelector('#form-login .login-btn');
+  btn.textContent = 'Connexion...'; btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { showErr('login-err', data.message || 'Erreur de connexion.'); return; }
+
+    localStorage.setItem('token', data.token);
+    state.user = data.student;
+    enterApp();
+  } catch(e) {
+    showErr('login-err', 'Erreur réseau. Réessayez.');
+  } finally {
+    btn.textContent = 'Se connecter →'; btn.disabled = false;
+  }
 }
 
-function doRegister() {
+async function doRegister() {
   const nom = document.getElementById('reg-nom').value;
   const prenom = document.getElementById('reg-prenom').value;
   const email = document.getElementById('reg-email').value;
   const password = document.getElementById('reg-password').value;
   if (!nom||!prenom||!email||!password) { showErr('reg-err','Remplissez tous les champs.'); return; }
-  state.user = { nom, prenom, email, matricule:'DSI-' + Math.floor(100000+Math.random()*900000) };
-  enterApp();
+
+  const btn = document.querySelector('#form-register .login-btn');
+  btn.textContent = 'Création...'; btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nom, prenom, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { showErr('reg-err', data.message || 'Erreur d\'inscription.'); return; }
+
+    localStorage.setItem('token', data.token);
+    state.user = data.student;
+    enterApp();
+  } catch(e) {
+    showErr('reg-err', 'Erreur réseau. Réessayez.');
+  } finally {
+    btn.textContent = 'Créer mon compte →'; btn.disabled = false;
+  }
 }
 
 function showErr(id, msg) {
@@ -879,6 +921,8 @@ function enterApp() {
 }
 
 function doLogout() {
+  localStorage.removeItem('token');
+  state.user = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
 }
@@ -1248,17 +1292,3 @@ function saveProfile() {
   const nom = document.getElementById('edit-nom').value.trim();
   const prenom = document.getElementById('edit-prenom').value.trim();
   if(nom) state.user.nom = nom;
-  if(prenom) state.user.prenom = prenom;
-  updateUserUI();
-  updateProfilStats();
-  // Visual feedback
-  const btn = event.target;
-  btn.textContent = '✅ Sauvegardé !';
-  setTimeout(() => btn.textContent = 'Sauvegarder', 2000);
-}
-
-// Init login page shown
-document.getElementById('app').style.display = 'none';
-</script>
-</body>
-</html>
