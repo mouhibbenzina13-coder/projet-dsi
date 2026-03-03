@@ -1336,3 +1336,19 @@ function saveProfile() {
   const nom = document.getElementById('edit-nom').value.trim();
   const prenom = document.getElementById('edit-prenom').value.trim();
   if(nom) state.user.nom = nom;
+  if(prenom) state.user.prenom = prenom;
+  updateUserUI();
+  updateProfilStats();
+  // Show success feedback
+  const btn = document.querySelector('#page-profil .btn-primary');
+  const orig = btn.textContent;
+  btn.textContent = '✅ Sauvegardé !';
+  btn.style.background = 'var(--green)';
+  setTimeout(() => { btn.textContent = orig; }, 2000);
+}
+
+// Auto-login on page load
+window.addEventListener('load', checkAutoLogin);
+</script>
+</body>
+</html>
