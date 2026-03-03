@@ -365,7 +365,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="login-error" id="login-err"></div>
       <button class="login-btn" onclick="doLogin()">Se connecter →</button>
       <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted);">
-        Compte démo : <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8febeae2e0cfebfce6a1eaebfa">[email&#160;protected]</a> / demo123
+        Compte démo : <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8eeaebe3e1ceeafde7a0ebeafb">[email&#160;protected]</a> / demo123
       </div>
     </div>
 
@@ -388,6 +388,14 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="form-group">
         <label class="form-label">Mot de passe</label>
         <input class="form-input" type="password" id="reg-password" placeholder="••••••••"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rôle</label>
+        <select class="form-input" id="reg-role">
+          <option value="student">🎓 Étudiant</option>
+          <option value="teacher">👨‍🏫 Enseignant</option>
+        </select>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">⚠️ Le rôle Admin est attribué manuellement.</div>
       </div>
       <div class="login-error" id="reg-err"></div>
       <button class="login-btn" onclick="doRegister()">Créer mon compte →</button>
@@ -435,7 +443,8 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
         <div class="avatar" id="sidebar-avatar">Y</div>
         <div>
           <div class="user-name" id="sidebar-name">Yasmine B.</div>
-          <div class="user-level">2ème DSI · S2</div>
+          <div id="user-role-badge" style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:1px;">🎓 Étudiant</div>
+<div class="user-level">2ème DSI · S2</div>
         </div>
       </div>
     </div>
@@ -755,7 +764,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
           <div style="text-align:center;padding:20px 0">
             <div style="width:80px;height:80px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#000;margin:0 auto 16px" id="profil-avatar">Y</div>
             <div style="font-size:20px;font-weight:700" id="profil-name">Yasmine Benali</div>
-            <div style="color:var(--muted);font-size:13px;margin-top:4px" id="profil-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="93eaf2e0fefafdf6d3f7e0fabdf6f7e6">[email&#160;protected]</a></div>
+            <div style="color:var(--muted);font-size:13px;margin-top:4px" id="profil-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d5acb4a6b8bcbbb095b1a6bcfbb0b1a0">[email&#160;protected]</a></div>
             <div class="chip green" style="margin-top:10px" id="profil-matricule">DSI-000001</div>
           </div>
           <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:8px">
@@ -847,58 +856,66 @@ function switchTab(tab) {
 }
 
 async function doLogin() {
-  const email = document.getElementById('login-email').value;
+  const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   if (!email || !password) { showErr('login-err','Remplissez tous les champs.'); return; }
-
   const btn = document.querySelector('#form-login .login-btn');
   btn.textContent = 'Connexion...'; btn.disabled = true;
-
   try {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
+    const res = await fetch(API_URL + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-    if (!res.ok) { showErr('login-err', data.message || 'Erreur de connexion.'); return; }
-
-    localStorage.setItem('token', data.token);
+    if (!res.ok) { showErr('login-err', data.message || 'Email ou mot de passe incorrect.'); return; }
+    localStorage.setItem('edudsi_token', data.token);
+    localStorage.setItem('edudsi_user', JSON.stringify(data.student));
     state.user = data.student;
+    state.token = data.token;
     enterApp();
   } catch(e) {
-    showErr('login-err', 'Erreur réseau. Réessayez.');
+    showErr('login-err', 'Erreur réseau. Vérifiez votre connexion.');
   } finally {
     btn.textContent = 'Se connecter →'; btn.disabled = false;
   }
 }
 
 async function doRegister() {
-  const nom = document.getElementById('reg-nom').value;
-  const prenom = document.getElementById('reg-prenom').value;
-  const email = document.getElementById('reg-email').value;
+  const nom = document.getElementById('reg-nom').value.trim();
+  const prenom = document.getElementById('reg-prenom').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-password').value;
+  const role = document.getElementById('reg-role') ? document.getElementById('reg-role').value : 'student';
   if (!nom||!prenom||!email||!password) { showErr('reg-err','Remplissez tous les champs.'); return; }
-
+  if (password.length < 6) { showErr('reg-err','Mot de passe minimum 6 caractères.'); return; }
   const btn = document.querySelector('#form-register .login-btn');
   btn.textContent = 'Création...'; btn.disabled = true;
-
   try {
-    const res = await fetch(`${API_URL}/api/auth/register`, {
+    const res = await fetch(API_URL + '/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nom, prenom, email, password })
+      body: JSON.stringify({ nom, prenom, email, password, role })
     });
     const data = await res.json();
-    if (!res.ok) { showErr('reg-err', data.message || 'Erreur d\'inscription.'); return; }
-
-    localStorage.setItem('token', data.token);
+    if (!res.ok) { showErr('reg-err', data.message || "Erreur lors de l'inscription."); return; }
+    localStorage.setItem('edudsi_token', data.token);
+    localStorage.setItem('edudsi_user', JSON.stringify(data.student));
     state.user = data.student;
+    state.token = data.token;
     enterApp();
   } catch(e) {
-    showErr('reg-err', 'Erreur réseau. Réessayez.');
+    showErr('reg-err', 'Erreur réseau. Vérifiez votre connexion.');
   } finally {
     btn.textContent = 'Créer mon compte →'; btn.disabled = false;
+  }
+}
+
+function checkAutoLogin() {
+  const token = localStorage.getItem('edudsi_token');
+  const user = localStorage.getItem('edudsi_user');
+  if (token && user) {
+    try { state.user = JSON.parse(user); state.token = token; enterApp(); } catch(e) {}
   }
 }
 
@@ -918,11 +935,30 @@ function enterApp() {
   renderNotes();
   renderSchedule();
   loadQuiz();
+  applyRoleUI();
+}
+
+function applyRoleUI() {
+  const role = state.user.role || 'student';
+  const roleLabels = { admin: '👑 Admin', teacher: '👨‍🏫 Enseignant', student: '🎓 Étudiant' };
+  const roleColors = { admin: 'var(--pink)', teacher: 'var(--blue)', student: 'var(--green)' };
+  // Show role badge in sidebar
+  const badge = document.getElementById('user-role-badge');
+  if (badge) {
+    badge.textContent = roleLabels[role] || roleLabels.student;
+    badge.style.color = roleColors[role] || roleColors.student;
+  }
+  // Hide admin-only nav items for non-admins
+  document.querySelectorAll('[data-role]').forEach(el => {
+    const required = el.getAttribute('data-role');
+    el.style.display = (role === required || role === 'admin') ? '' : 'none';
+  });
 }
 
 function doLogout() {
-  localStorage.removeItem('token');
-  state.user = null;
+  localStorage.removeItem('edudsi_token');
+  localStorage.removeItem('edudsi_user');
+  state.user = null; state.token = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
 }
@@ -1140,6 +1176,9 @@ function renderSchedule() {
   grid.style.gridTemplateColumns = `80px repeat(5,1fr)`;
   grid.innerHTML = html;
 }
+
+// Auto-login on page load
+window.addEventListener('load', checkAutoLogin);
 
 // ============================================
 // AI CHAT
