@@ -911,7 +911,7 @@ function initDemoData() {
 // ============================================
 // CONFIG
 // ============================================
-const API_URL = 'https://projet-dsi.up.railway.app';
+const API_URL = 'https://edudsi-backend-production.up.railway.app';
 
 // ============================================
 // AUTH
@@ -1380,7 +1380,7 @@ function getAIResponse(question) {
   return fallback[Math.floor(Math.random()*fallback.length)];
 }
 
-function sendMsg() {
+async function sendMsg() {
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
   if(!msg) return;
@@ -1398,11 +1398,23 @@ function sendMsg() {
     </div>`;
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-  setTimeout(() => {
+  try {
+    const res = await fetch(API_URL + '/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
+      body: JSON.stringify({ message: msg })
+    });
     document.getElementById(typingId)?.remove();
-    const response = getAIResponse(msg);
-    addChatMsg('ai', response);
-  }, 800 + Math.random()*600);
+    if(res.ok) {
+      const data = await res.json();
+      addChatMsg('ai', data.reply);
+    } else {
+      addChatMsg('ai', getAIResponse(msg));
+    }
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    addChatMsg('ai', getAIResponse(msg));
+  }
 }
 
 function addChatMsg(role, text) {
@@ -1506,30 +1518,13 @@ async function analyzeNotesWithAI() {
   const moy = calcMoyenne();
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        messages: [{
-          role: 'user',
-          content: `Tu es un assistant académique bienveillant pour des étudiants DSI (Développement des Systèmes Informatiques). 
-Voici les notes d'un étudiant: ${notesText}
-Moyenne générale: ${moy}/20
-
-En 2-3 phrases courtes en français:
-1. Identifie la matière où l'étudiant est le plus en difficulté
-2. Donne un conseil pratique et encourageant pour améliorer cette note
-3. Termine avec une phrase de motivation
-
-Sois concis, chaleureux et pratique.`
-        }]
-      })
+    const res = await fetch(API_URL + '/api/ai/analyze', {
+      headers: { 'Authorization': 'Bearer ' + state.token }
     });
-    const data = await res.json();
-    if(data.content && data.content[0]) {
-      conseil.textContent = '🤖 ' + data.content[0].text;
+    if(res.ok) {
+      const data = await res.json();
+      conseil.textContent = '🤖 ' + data.reply;
+      return;
     }
   } catch(e) {
     // Fallback local analysis

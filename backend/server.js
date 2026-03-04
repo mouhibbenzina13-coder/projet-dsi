@@ -14,9 +14,10 @@ app.use('/api/auth',     require('./routes/auth'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/courses',  require('./routes/courses'));
 app.use('/api/grades',   require('./routes/grades'));
+app.use('/api/ai', require('./routes/ai'));
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dsi_db')
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err));
 
