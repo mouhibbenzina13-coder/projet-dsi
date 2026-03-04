@@ -390,6 +390,9 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
       <div class="login-error" id="login-err"></div>
       <button class="login-btn" onclick="doLogin()">Se connecter →</button>
+      <div style="text-align:center;margin-top:12px;">
+        <span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="showForgotPassword()">Mot de passe oublié ?</span>
+      </div>
       
     </div>
 
@@ -423,6 +426,23 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
       <div class="login-error" id="reg-err"></div>
       <button class="login-btn" onclick="doRegister()">Créer mon compte →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FORGOT PASSWORD MODAL ===== -->
+<div id="forgot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;width:400px;max-width:90vw">
+    <div style="font-size:18px;font-weight:700;margin-bottom:8px">🔐 Mot de passe oublié</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Entrez votre email et nous vous enverrons un lien de réinitialisation.</div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="forgot-email" type="email" placeholder="votre@email.com"/>
+    </div>
+    <div id="forgot-msg" style="font-size:13px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="hideForgotPassword()">Annuler</button>
+      <button class="login-btn" style="flex:2;margin-top:0" onclick="doForgotPassword()">Envoyer le lien</button>
     </div>
   </div>
 </div>
@@ -602,21 +622,34 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
             <label class="form-label">Matière</label>
             <input class="form-input" id="n-matiere" placeholder="ex: Bases de Données"/>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
             <div class="form-group">
-              <label class="form-label">Note (/20)</label>
-              <input class="form-input" type="number" id="n-note" placeholder="15" min="0" max="20"/>
+              <label class="form-label">📝 TP (/20)</label>
+              <input class="form-input" type="number" id="n-tp" placeholder="—" min="0" max="20" step="0.25"/>
             </div>
+            <div class="form-group">
+              <label class="form-label">📖 Cours (/20)</label>
+              <input class="form-input" type="number" id="n-cours" placeholder="—" min="0" max="20" step="0.25"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">📋 Examen (/20)</label>
+              <input class="form-input" type="number" id="n-note" placeholder="—" min="0" max="20" step="0.25"/>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group">
               <label class="form-label">Coefficient</label>
               <input class="form-input" type="number" id="n-coeff" value="2" min="1" max="5"/>
             </div>
+            <div class="form-group">
+              <label class="form-label">Semestre</label>
+              <select class="form-select" id="n-sem"><option>S1</option><option selected>S2</option></select>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Semestre</label>
-            <select class="form-select" id="n-sem"><option>S1</option><option selected>S2</option></select>
+          <div style="background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.2);border-radius:10px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--muted)">
+            💡 Moyenne calculée : <strong id="note-preview" style="color:var(--green)">—</strong> &nbsp;(TP×30% + Cours×30% + Examen×40%)
           </div>
-          <button class="btn btn-primary" style="width:100%" onclick="addNote()">Enregistrer la note</button>
+          <button class="btn btn-primary" style="width:100%" onclick="addNote()">💾 Enregistrer la note</button>
         </div>
 
         <!-- Stats box -->
@@ -956,17 +989,35 @@ function showErr(id, msg) {
   setTimeout(() => el.style.display='none', 3000);
 }
 
-function enterApp() {
-  initDemoData();
+async function enterApp() {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  initDemoData();
   updateUserUI();
+  applyRoleUI();
   renderDashboard();
   renderCourses();
-  renderNotes();
   renderSchedule();
   loadQuiz();
-  applyRoleUI();
+  // Load real notes from API
+  await loadMyNotes();
+  renderNotes();
+  renderDashboard();
+}
+
+async function loadMyNotes() {
+  if(!state.token) return;
+  try {
+    const res = await fetch(API_URL + '/api/students/me', {
+      headers: { 'Authorization': 'Bearer ' + state.token }
+    });
+    if(res.ok) {
+      const data = await res.json();
+      if(data.notes && data.notes.length > 0) {
+        state.notes = data.notes;
+      }
+    }
+  } catch(e) { console.log('Could not load notes from API'); }
 }
 
 function applyRoleUI() {
@@ -1123,15 +1174,21 @@ function renderNotes() {
   const tbody = document.getElementById('notes-tbody');
   document.getElementById('notes-count').textContent = `${state.notes.length} notes`;
 
-  tbody.innerHTML = state.notes.map(n => `
-    <tr>
+  tbody.innerHTML = state.notes.map(n => {
+    const nid = n._id || n.id;
+    const badge = cls => `note-badge ${cls}`;
+    const bc = n.note>=14?'note-high':n.note>=10?'note-mid':'note-low';
+    return `<tr>
       <td style="font-weight:500">${n.matiere}</td>
-      <td><span class="note-badge ${n.note>=14?'note-high':n.note>=10?'note-mid':'note-low'}">${n.note}/20</span></td>
+      <td style="color:var(--blue)">${n.tp!=null?n.tp+'/20':'—'}</td>
+      <td style="color:var(--purple)">${n.cours!=null?n.cours+'/20':'—'}</td>
+      <td style="color:var(--yellow)">${n.examen!=null?n.examen+'/20':'—'}</td>
+      <td><span class="${badge(bc)}">${n.note}/20</span></td>
       <td style="color:var(--muted)">${n.coefficient}</td>
       <td><span class="chip ${n.semestre==='S1'?'blue':'green'}">${n.semestre}</span></td>
-      <td><button onclick="deleteNote(${n.id})" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:var(--red);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Outfit',sans-serif">Supprimer</button></td>
-    </tr>
-  `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Aucune note ajoutée</td></tr>';
+      <td><button onclick="deleteNote('${nid}')" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:var(--red);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Outfit',sans-serif">🗑</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Aucune note ajoutée</td></tr>';
 
   updateNoteStats();
 }
@@ -1153,26 +1210,84 @@ function updateNoteStats() {
   document.getElementById('profil-nb-notes').textContent = notes.length;
 }
 
-function addNote() {
-  const matiere = document.getElementById('n-matiere').value.trim();
-  const note = parseFloat(document.getElementById('n-note').value);
-  if(!matiere || isNaN(note) || note<0 || note>20) return;
-  state.notes.push({
-    id: Date.now(),
-    matiere, note,
-    coefficient: parseInt(document.getElementById('n-coeff').value)||1,
-    semestre: document.getElementById('n-sem').value,
-  });
-  document.getElementById('n-matiere').value = '';
-  document.getElementById('n-note').value = '';
-  renderNotes();
-  renderDashboard();
+// Live preview of calculated note
+['n-tp','n-cours','n-note'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', updateNotePreview);
+});
+
+function updateNotePreview() {
+  const tp = parseFloat(document.getElementById('n-tp').value) || null;
+  const cours = parseFloat(document.getElementById('n-cours').value) || null;
+  const examen = parseFloat(document.getElementById('n-note').value) || null;
+  const preview = document.getElementById('note-preview');
+  if(!preview) return;
+  if(tp===null && cours===null && examen===null) { preview.textContent = '—'; return; }
+  let sum = 0, weight = 0;
+  if(tp!==null) { sum += tp * 0.3; weight += 0.3; }
+  if(cours!==null) { sum += cours * 0.3; weight += 0.3; }
+  if(examen!==null) { sum += examen * 0.4; weight += 0.4; }
+  const avg = (sum / weight).toFixed(2);
+  preview.textContent = avg + '/20';
+  preview.style.color = avg >= 14 ? 'var(--green)' : avg >= 10 ? 'var(--yellow)' : 'var(--red)';
 }
 
-function deleteNote(id) {
-  state.notes = state.notes.filter(n => n.id !== id);
-  renderNotes();
-  renderDashboard();
+async function addNote() {
+  const matiere = document.getElementById('n-matiere').value.trim();
+  const tp = document.getElementById('n-tp').value !== '' ? parseFloat(document.getElementById('n-tp').value) : null;
+  const cours = document.getElementById('n-cours').value !== '' ? parseFloat(document.getElementById('n-cours').value) : null;
+  const examen = document.getElementById('n-note').value !== '' ? parseFloat(document.getElementById('n-note').value) : null;
+  if(!matiere) { alert('Entrez le nom de la matière'); return; }
+  if(tp===null && cours===null && examen===null) { alert('Entrez au moins une note'); return; }
+
+  // Calculate weighted average
+  let sum = 0, weight = 0;
+  if(tp!==null) { sum += tp*0.3; weight+=0.3; }
+  if(cours!==null) { sum += cours*0.3; weight+=0.3; }
+  if(examen!==null) { sum += examen*0.4; weight+=0.4; }
+  const note = parseFloat((sum/weight).toFixed(2));
+  const coefficient = parseInt(document.getElementById('n-coeff').value)||1;
+  const semestre = document.getElementById('n-sem').value;
+
+  const btn = document.querySelector('#page-notes .btn-primary');
+  btn.textContent = 'Enregistrement...'; btn.disabled = true;
+
+  try {
+    const res = await fetch(API_URL + '/api/students/me/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
+      body: JSON.stringify({ matiere, note, tp, cours, examen, coefficient, semestre })
+    });
+    if(res.ok) {
+      const notes = await res.json();
+      state.notes = notes;
+      document.getElementById('n-matiere').value = '';
+      document.getElementById('n-tp').value = '';
+      document.getElementById('n-cours').value = '';
+      document.getElementById('n-note').value = '';
+      document.getElementById('note-preview').textContent = '—';
+      renderNotes(); renderDashboard();
+      // AI Analysis after adding note
+      analyzeNotesWithAI();
+    }
+  } catch(e) {
+    // Fallback to local if API fails
+    state.notes.push({ id: Date.now(), matiere, note, tp, cours, examen, coefficient, semestre });
+    renderNotes(); renderDashboard();
+  } finally {
+    btn.textContent = '💾 Enregistrer la note'; btn.disabled = false;
+  }
+}
+
+async function deleteNote(id) {
+  try {
+    await fetch(API_URL + '/api/students/me/notes/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + state.token }
+    });
+  } catch(e) {}
+  state.notes = state.notes.filter(n => (n._id||n.id) !== id);
+  renderNotes(); renderDashboard();
 }
 
 // ============================================
@@ -1371,6 +1486,100 @@ function saveProfile() {
   btn.textContent = '✅ Sauvegardé !';
   btn.style.background = 'var(--green)';
   setTimeout(() => { btn.textContent = orig; }, 2000);
+}
+
+// ============================================
+// AI NOTE ANALYSIS
+// ============================================
+async function analyzeNotesWithAI() {
+  if(!state.notes.length) return;
+  const conseil = document.getElementById('ai-conseil');
+  if(!conseil) return;
+  conseil.textContent = '🤖 Analyse en cours...';
+
+  const notesText = state.notes.map(n =>
+    `${n.matiere}: ${n.note}/20 (TP:${n.tp||'—'}, Cours:${n.cours||'—'}, Examen:${n.examen||'—'})`
+  ).join(', ');
+  const moy = calcMoyenne();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: `Tu es un assistant académique bienveillant pour des étudiants DSI (Développement des Systèmes Informatiques). 
+Voici les notes d'un étudiant: ${notesText}
+Moyenne générale: ${moy}/20
+
+En 2-3 phrases courtes en français:
+1. Identifie la matière où l'étudiant est le plus en difficulté
+2. Donne un conseil pratique et encourageant pour améliorer cette note
+3. Termine avec une phrase de motivation
+
+Sois concis, chaleureux et pratique.`
+        }]
+      })
+    });
+    const data = await res.json();
+    if(data.content && data.content[0]) {
+      conseil.textContent = '🤖 ' + data.content[0].text;
+    }
+  } catch(e) {
+    // Fallback local analysis
+    const moy = calcMoyenne();
+    const worst = state.notes.reduce((a,b) => a.note < b.note ? a : b);
+    const result = moy>=16 ? '🌟 Excellent niveau ! Vous êtes dans le top de la classe.' :
+      moy>=14 ? `✅ Très bon niveau ! Renforcez un peu ${worst.matiere} pour atteindre l'excellence.` :
+      moy>=10 ? `⚠️ Niveau correct. Concentrez-vous sur ${worst.matiere} (${worst.note}/20) — révisez les exercices de base.` :
+      `🚨 Attention ! ${worst.matiere} nécessite une attention urgente. Consultez votre professeur rapidement.`;
+    conseil.textContent = result;
+  }
+}
+
+// ============================================
+// FORGOT PASSWORD
+// ============================================
+function showForgotPassword() {
+  const modal = document.getElementById('forgot-modal');
+  modal.style.display = 'flex';
+}
+
+function hideForgotPassword() {
+  document.getElementById('forgot-modal').style.display = 'none';
+  document.getElementById('forgot-msg').style.display = 'none';
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const msg = document.getElementById('forgot-msg');
+  if(!email) { 
+    msg.textContent = '⚠️ Entrez votre email.';
+    msg.style.color = 'var(--red)';
+    msg.style.display = 'block';
+    return; 
+  }
+  const btn = document.querySelector('#forgot-modal .login-btn');
+  btn.textContent = 'Envoi...'; btn.disabled = true;
+  try {
+    const res = await fetch(API_URL + '/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    msg.textContent = '✅ Si cet email existe, un lien vous a été envoyé.';
+    msg.style.color = 'var(--green)';
+    msg.style.display = 'block';
+  } catch(e) {
+    msg.textContent = '✅ Si cet email existe, un lien vous a été envoyé.';
+    msg.style.color = 'var(--green)';
+    msg.style.display = 'block';
+  } finally {
+    btn.textContent = 'Envoyer le lien'; btn.disabled = false;
+  }
 }
 
 // Auto-login on page load
