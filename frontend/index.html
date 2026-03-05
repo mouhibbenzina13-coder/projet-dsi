@@ -425,7 +425,6 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
           <option value="student">🎓 Étudiant</option>
           <option value="teacher">👨‍🏫 Enseignant</option>
         </select>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">⚠️ Le rôle Admin est attribué manuellement.</div>
       </div>
       <div class="login-error" id="reg-err"></div>
       <button class="login-btn" onclick="doRegister()">Créer mon compte →</button>
@@ -698,11 +697,50 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
 
     <!-- ===== EMPLOI DU TEMPS ===== -->
     <div class="page" id="page-emploi">
-      <div style="margin-bottom:24px">
-        <h2 style="font-size:20px;font-weight:700">Emploi du Temps</h2>
-        <p style="color:var(--muted);font-size:14px;margin-top:2px">Semaine type — 2ème DSI S2</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h2 style="font-size:20px;font-weight:700">Emploi du Temps</h2>
+          <p style="color:var(--muted);font-size:14px;margin-top:2px" id="sch-subtitle">Semaine type</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select class="form-select" id="sch-classe" onchange="onScheduleChange()" style="width:140px">
+            <option value="1ere">1ère DSI</option>
+            <option value="2eme" selected>2ème DSI</option>
+            <option value="3eme">3ème DSI</option>
+          </select>
+          <select class="form-select" id="sch-semestre" onchange="onScheduleChange()" style="width:90px">
+            <option value="S1">S1</option>
+            <option value="S2" selected>S2</option>
+          </select>
+          <button class="btn btn-primary" onclick="toggleEditSchedule()">✏️ Modifier</button>
+        </div>
       </div>
-      <div class="card">
+
+      <!-- Edit modal -->
+      <div class="card" id="edit-schedule-form" style="display:none;margin-bottom:20px">
+        <div class="section-title">✏️ Modifier une case</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;align-items:end">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Jour</label>
+            <select class="form-select" id="sch-edit-jour">
+              <option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Heure</label>
+            <select class="form-select" id="sch-edit-heure">
+              <option>08:00</option><option>09:30</option><option>11:00</option><option>13:30</option><option>15:00</option><option>16:30</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Matière</label>
+            <input class="form-input" id="sch-edit-matiere" placeholder="ex: Algorithmique"/>
+          </div>
+          <button class="btn btn-primary" onclick="saveScheduleCell()" style="height:42px">Sauvegarder</button>
+        </div>
+      </div>
+
+      <div class="card" style="overflow-x:auto">
         <div class="schedule-grid" id="schedule-grid"></div>
       </div>
     </div>
@@ -1296,18 +1334,131 @@ async function deleteNote(id) {
 // ============================================
 // SCHEDULE
 // ============================================
-function renderSchedule() {
+const scheduleData = {
+  '1ere': {
+    'S1': [
+      ['Maths','Physique','—','Algo','Anglais'],
+      ['Physique','Maths','Algo','—','Maths'],
+      ['Algo','—','Maths','Physique','—'],
+      ['—','Algo','Physique','Maths','Algo'],
+      ['Anglais','Maths','—','Algo','Physique'],
+      ['Maths','Algo','Physique','Anglais','—'],
+    ],
+    'S2': [
+      ['Algo','BDD','—','Dev Web','Maths'],
+      ['Dev Web','Algo','BDD','—','Réseaux'],
+      ['Maths','Dev Web','—','Algo','BDD'],
+      ['—','Réseaux','Dev Web','Maths','—'],
+      ['BDD','—','Réseaux','Dev Web','Algo'],
+      ['Réseaux','Maths','Algo','BDD','Dev Web'],
+    ]
+  },
+  '2eme': {
+    'S1': [
+      ['Algo Avancée','BDD','—','Réseaux','Maths'],
+      ['Dev Web','Algo Avancée','BDD','—','Réseaux'],
+      ['Maths','Dev Web','—','Algo Avancée','BDD'],
+      ['—','Réseaux','Dev Web','Maths','—'],
+      ['BDD','—','Réseaux','Dev Web','Algo Avancée'],
+      ['Réseaux','Maths','Algo Avancée','BDD','Dev Web'],
+    ],
+    'S2': [
+      ['Algorithmique','BDD','—','Réseaux','Maths'],
+      ['Dev Web','Algo','BDD','—','Réseaux'],
+      ['Maths','Dev Web','—','Algo','BDD'],
+      ['—','Réseaux','Dev Web','Maths','—'],
+      ['BDD','—','Réseaux','Dev Web','Algo'],
+      ['Réseaux','Maths','Algo','BDD','Dev Web'],
+    ]
+  },
+  '3eme': {
+    'S1': [
+      ['Architecture','DevOps','—','IA','Gestion'],
+      ['IA','Architecture','DevOps','—','Sécurité'],
+      ['Gestion','IA','—','Architecture','DevOps'],
+      ['—','Sécurité','IA','Gestion','—'],
+      ['DevOps','—','Sécurité','IA','Architecture'],
+      ['Sécurité','Gestion','Architecture','DevOps','IA'],
+    ],
+    'S2': [
+      ['PFE','DevOps','—','IA','Gestion'],
+      ['IA','PFE','DevOps','—','Sécurité'],
+      ['Gestion','IA','—','PFE','DevOps'],
+      ['—','Sécurité','IA','Gestion','—'],
+      ['DevOps','—','Sécurité','IA','PFE'],
+      ['Sécurité','Gestion','PFE','DevOps','IA'],
+    ]
+  }
+};
+
+const courseColors = {
+  'Algorithmique':'#22d3a0','Algo':'#22d3a0','Algo Avancée':'#22d3a0',
+  'BDD':'#60a5fa','Dev Web':'#f472b6','Réseaux':'#fbbf24',
+  'Maths':'#a78bfa','Physique':'#34d399','Anglais':'#fb923c',
+  'Architecture':'#e879f9','DevOps':'#38bdf8','IA':'#4ade80',
+  'Gestion':'#facc15','Sécurité':'#f87171','PFE':'#a78bfa',
+  '—':null
+};
+
+function getCourseColor(name) {
+  if (courseColors[name]) return courseColors[name];
+  // Generate consistent color from name
+  const colors = ['#22d3a0','#60a5fa','#f472b6','#fbbf24','#a78bfa','#34d399','#fb923c','#38bdf8'];
+  let hash = 0;
+  for (let c of name) hash = c.charCodeAt(0) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function onScheduleChange() {
+  const classe = document.getElementById('sch-classe').value;
+  const semestre = document.getElementById('sch-semestre').value;
+  const labels = { '1ere':'1ère DSI', '2eme':'2ème DSI', '3eme':'3ème DSI' };
+  document.getElementById('sch-subtitle').textContent = `Semaine type — ${labels[classe]} ${semestre}`;
+  renderSchedule();
+}
+
+function toggleEditSchedule() {
+  const f = document.getElementById('edit-schedule-form');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveScheduleCell() {
+  const classe = document.getElementById('sch-classe').value;
+  const semestre = document.getElementById('sch-semestre').value;
+  const jour = document.getElementById('sch-edit-jour').value;
+  const heure = document.getElementById('sch-edit-heure').value;
+  const matiere = document.getElementById('sch-edit-matiere').value.trim();
+  if (!matiere) return;
+
   const jours = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
   const heures = ['08:00','09:30','11:00','13:30','15:00','16:30'];
-  const schedule = [
-    ['Algorithmique','BDD','—','Réseaux','Maths'],
-    ['Dev Web','Algo','BDD','—','Réseaux'],
-    ['Maths','Dev Web','—','Algo','BDD'],
-    ['—','Réseaux','Dev Web','Maths','—'],
-    ['BDD','—','Réseaux','Dev Web','Algo'],
-    ['Réseaux','Maths','Algo','BDD','Dev Web'],
-  ];
-  const colors = { 'Algorithmique':'#22d3a0','BDD':'#60a5fa','Dev Web':'#f472b6','Réseaux':'#fbbf24','Maths':'#a78bfa','—':null };
+  const ji = jours.indexOf(jour);
+  const hi = heures.indexOf(heure);
+
+  if (ji >= 0 && hi >= 0) {
+    scheduleData[classe][semestre][hi][ji] = matiere;
+    // Save to localStorage
+    localStorage.setItem('scheduleData', JSON.stringify(scheduleData));
+    renderSchedule();
+    document.getElementById('sch-edit-matiere').value = '';
+    // Show success
+    const btn = document.querySelector('#edit-schedule-form .btn-primary');
+    btn.textContent = '✅ Sauvegardé !';
+    setTimeout(() => btn.textContent = 'Sauvegarder', 2000);
+  }
+}
+
+function renderSchedule() {
+  const classe = document.getElementById('sch-classe')?.value || '2eme';
+  const semestre = document.getElementById('sch-semestre')?.value || 'S2';
+
+  // Load from localStorage if exists
+  const saved = localStorage.getItem('scheduleData');
+  const data = saved ? JSON.parse(saved) : scheduleData;
+
+  const jours = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+  const heures = ['08:00','09:30','11:00','13:30','15:00','16:30'];
+  const schedule = data[classe]?.[semestre] || scheduleData['2eme']['S2'];
 
   const grid = document.getElementById('schedule-grid');
   let html = '<div class="sch-header"></div>';
@@ -1316,14 +1467,22 @@ function renderSchedule() {
   heures.forEach((h, hi) => {
     html += `<div class="sch-time">${h}</div>`;
     jours.forEach((_,ji) => {
-      const cours = schedule[hi][ji];
-      const color = colors[cours];
-      html += `<div class="sch-cell">${color ? `<div class="sch-course" style="background:${color}18;color:${color};border:1px solid ${color}33">${cours}</div>` : ''}</div>`;
+      const cours = schedule[hi]?.[ji] || '—';
+      const color = getCourseColor(cours);
+      html += `<div class="sch-cell">${color && cours !== '—' ? 
+        `<div class="sch-course" style="background:${color}18;color:${color};border:1px solid ${color}33">${cours}</div>` 
+        : ''}</div>`;
     });
   });
 
   grid.style.gridTemplateColumns = `80px repeat(5,1fr)`;
   grid.innerHTML = html;
+
+  // Auto-select student's class
+  const niveau = state?.user?.niveau || '';
+  if (niveau.includes('1')) document.getElementById('sch-classe').value = '1ere';
+  else if (niveau.includes('3')) document.getElementById('sch-classe').value = '3eme';
+  else document.getElementById('sch-classe').value = '2eme';
 }
 
 // Auto-login on page load
