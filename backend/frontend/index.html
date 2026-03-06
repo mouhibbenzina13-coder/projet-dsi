@@ -944,8 +944,8 @@ function initDemoData() {
 // ============================================
 // CONFIG
 // ============================================
-const AGENT_URL = 'https://diligent-patience-production-8e8e.up.railway.app';
-const API_URL = 'https://projet-dsi-production.up.railway.app';
+const API_URL = 'https://edudsi-backend-production.up.railway.app';
+
 // ============================================
 // AUTH
 // ============================================
@@ -1494,6 +1494,56 @@ function renderSchedule() {
 window.addEventListener('load', checkAutoLogin);
 
 // ============================================
+// AI CHAT
+// ============================================
+const aiKnowledge = {
+  'python': '🐍 Python est fondamental en DSI ! Apprenez les structures de données (listes, dicts, sets), la POO, et les bibliothèques comme NumPy et Pandas pour la data science.',
+  'java': '☕ Java est orienté objet. Focus sur les design patterns (Singleton, Factory, Observer) et les frameworks Spring/Spring Boot pour le développement enterprise.',
+  'algorithme': '⚡ La complexité algorithmique est clé ! O(1) constant, O(log n) logarithmique, O(n) linéaire, O(n²) quadratique. Maîtrisez le tri (QuickSort, MergeSort) et les structures (arbres, graphes).',
+  'sql': '🗄️ SQL est incontournable ! SELECT, JOIN (INNER, LEFT, RIGHT), GROUP BY, HAVING, sous-requêtes. Pratiquez avec MySQL ou PostgreSQL.',
+  'mongodb': '🌿 MongoDB stocke des documents JSON. Avec Mongoose en Node.js, définissez vos schemas, utilisez find(), save(), et les agrégations pour des requêtes complexes.',
+  'react': '⚛️ React = composants + hooks. useState pour l\'état local, useEffect pour les effets de bord, useContext pour partager des données. Next.js ajoute le SSR.',
+  'angular': '🅰️ Angular est un framework complet TypeScript. Composants, services, injection de dépendances, routing, et RxJS pour la programmation réactive.',
+  'réseau': '🌐 TCP/IP est la base. HTTP/HTTPS pour le web, DNS pour la résolution de noms, les sockets pour la communication temps réel. Indispensable pour tout dev backend.',
+  'révision': '📖 Méthode efficace : 1) Relisez les cours 2) Refaites les exercices 3) Technique Feynman (expliquez à voix haute) 4) Pomodoro 25/5 5) Dormez suffisamment avant l\'exam !',
+  'machine learning': '🤖 ML en Python avec Scikit-learn. Commencez par la régression linéaire, puis classification (SVM, Random Forest), et évaluez avec cross-validation. Pandas + NumPy sont vos amis.',
+  'typescript': '📘 TypeScript = JavaScript + types statiques. Interfaces, enums, génériques, décorateurs. Réduit drastiquement les bugs au runtime. Obligatoire avec Angular !',
+  'express': '🚀 Express.js simplifie Node.js. Définissez des routes (GET, POST, PUT, DELETE), utilisez les middlewares (CORS, auth JWT), et connectez MongoDB avec Mongoose.',
+};
+
+function getAIResponse(question) {
+  const q = question.toLowerCase();
+
+  for(const [key, resp] of Object.entries(aiKnowledge)) {
+    if(q.includes(key)) return resp;
+  }
+
+  if(q.includes('bonjour')||q.includes('salut')||q.includes('hello'))
+    return '👋 Bonjour ! Comment puis-je vous aider aujourd\'hui ?';
+
+  if(q.includes('analyse') && q.includes('note')) {
+    const moy = calcMoyenne();
+    const result = moy>=16?'🌟 Excellent niveau ! Vous êtes dans le top.':
+      moy>=14?'✅ Très bon niveau ! Quelques améliorations possibles.':
+      moy>=10?'⚠️ Niveau moyen. Intensifiez vos révisions.':
+      '🚨 Niveau insuffisant. Plan de rattrapage urgent !';
+    document.getElementById('ai-analyse-result').innerHTML = `<div style="color:var(--text)"><b>Moyenne : ${moy}/20</b><br/>${result}</div>`;
+    return `📊 Analyse de vos notes :\n\n• Moyenne générale : ${moy}/20\n• Nombre de notes : ${state.notes.length}\n\n${result}`;
+  }
+
+  if(q.includes('moyenne')) {
+    const moy = calcMoyenne();
+    return `📊 Votre moyenne actuelle est de ${moy}/20 basée sur ${state.notes.length} notes enregistrées.`;
+  }
+
+  const fallback = [
+    `💡 Votre question sur "${question.slice(0,40)}" est intéressante ! Pour approfondir, consultez vos cours ou la documentation officielle.`,
+    `🎯 En DSI, maîtriser les fondamentaux est essentiel. Concernant "${question.slice(0,40)}", je vous recommande de pratiquer régulièrement.`,
+    `📚 Pour "${question.slice(0,40)}", cherchez dans vos cours de DSI ou posez la question à votre professeur pour plus de précision.`,
+  ];
+  return fallback[Math.floor(Math.random()*fallback.length)];
+}
+
 async function sendMsg() {
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
@@ -1515,10 +1565,7 @@ async function sendMsg() {
   try {
     const res = await fetch(API_URL + '/api/ai/chat', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': 'Bearer ' + state.token 
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
       body: JSON.stringify({ message: msg })
     });
     document.getElementById(typingId)?.remove();
@@ -1534,6 +1581,24 @@ async function sendMsg() {
     console.error('AI Chat error:', e);
   }
 }
+
+function addChatMsg(role, text) {
+  const div = document.getElementById('chat-messages');
+  const avatar = role==='ai'?'🤖':'👤';
+  div.innerHTML += `
+    <div class="msg ${role}">
+      <div class="msg-avatar ${role}">${avatar}</div>
+      <div class="msg-bubble" style="white-space:pre-wrap">${text}</div>
+    </div>`;
+  div.scrollTop = div.scrollHeight;
+}
+
+function askSuggestion(btn) {
+  document.getElementById('chat-input').value = btn.textContent;
+  showPage('ai', document.querySelector('[onclick*="showPage(\'ai\'"]'));
+  sendMsg();
+}
+
 // ============================================
 // QUIZ
 // ============================================
