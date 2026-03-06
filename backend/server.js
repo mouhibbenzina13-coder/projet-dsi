@@ -18,9 +18,10 @@ app.use('/api/grades',   require('./routes/grades'));
 app.use('/api/ai',       require('./routes/ai'));
 
 // Serve frontend static files
-app.use(express.static(path.join(__dirname, '../frontend')));
+const frontendPath = path.join(__dirname, 'frontend');
+app.use(express.static(frontendPath));
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // MongoDB connection
