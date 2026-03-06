@@ -1,88 +1,138 @@
 const express = require('express');
-const fetch = require('node-fetch');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Student = require('../models/Student');
+
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const MODEL = 'claude-sonnet-4-5-20251001';
+
+async function callClaude(system, userMessage, maxTokens = 800) {
+  const fetch = (...args) => import('node-fetch').then(m => m.default(...args));
+  const res = await fetch(ANTHROPIC_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role: 'user', content: userMessage }],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Claude API error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  if (!data.content || !data.content[0] || !data.content[0].text) {
+    throw new Error('Réponse vide de Claude');
+  }
+  return data.content[0].text;
+}
+
+// Build notes context string
+function buildNotesContext(notes) {
+  if (!notes || !notes.length) return 'Aucune note enregistrée.';
+  return notes.map(n => {
+    const parts = [`${n.matiere}: ${n.note}/20 (coeff:${n.coefficient})`];
+    if (n.tp    != null) parts.push(`TP:${n.tp}`);
+    if (n.cours != null) parts.push(`Cours:${n.cours}`);
+    if (n.examen != null) parts.push(`Examen:${n.examen}`);
+    return parts.join(', ');
+  }).join('\n');
+}
+
+// Calculate weighted average
+function calcMoyenne(notes) {
+  if (!notes || !notes.length) return null;
+  const somme = notes.reduce((a, n) => a + n.note * (n.coefficient || 1), 0);
+  const coeff = notes.reduce((a, n) => a + (n.coefficient || 1), 0);
+  return (somme / coeff).toFixed(2);
+}
 
 // POST /api/ai/chat
 router.post('/chat', auth, async (req, res) => {
   try {
     const { message } = req.body;
-
-    // Get student notes for context
-    const student = await Student.findById(req.user.id);
-    const notes = student?.notes || [];
-    const notesContext = notes.length > 0
-      ? `Notes de l'étudiant: ${notes.map(n => `${n.matiere}: ${n.note}/20`).join(', ')}`
-      : 'Aucune note enregistrée.';
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `Tu es un agent IA assistant pour des étudiants en 2ème année DSI (Développement des Systèmes d'Information) en Tunisie.
-Tu aides les étudiants à comprendre leurs cours : Algorithmique, Bases de données, Réseaux, Développement Web, Mathématiques, Systèmes d'Exploitation, React, Angular, Node.js, Python, Java.
-Tu analyses leurs notes et tu donnes des conseils personnalisés pour améliorer leurs résultats.
-Pour les mauvaises notes (< 10), tu proposes un plan d'amélioration concret et encourageant.
-Réponds toujours en français de manière bienveillante, concise et professionnelle.
-Contexte étudiant: ${notesContext}`,
-        messages: [{ role: 'user', content: message }]
-      })
-    });
-
-    const data = await response.json();
-    if (!data.content || !data.content[0]) {
-      return res.status(500).json({ message: 'Erreur IA' });
+    if (!message || !message.trim()) {
+      return res.status(400).json({ message: 'Message vide.' });
     }
-    res.json({ reply: data.content[0].text });
+
+    const student = await Student.findById(req.user.id).select('-password');
+    const notes = student?.notes || [];
+    const notesContext = buildNotesContext(notes);
+    const moyenne = calcMoyenne(notes);
+
+    const system = `Tu es un agent IA assistant intelligent pour des étudiants en 2ème année DSI (Développement des Systèmes d'Information) en Tunisie.
+
+Tu aides les étudiants à :
+- Comprendre leurs cours : Algorithmique, Bases de données, Réseaux, Développement Web, Mathématiques, Systèmes d'Exploitation, React, Angular, Node.js, Python, Java
+- Analyser leurs notes et donner des conseils personnalisés
+- Proposer des plans d'amélioration concrets pour les matières faibles (note < 10)
+- Répondre à des questions techniques précises avec des exemples de code
+
+Réponds TOUJOURS en français, de manière bienveillante, concise et structurée.
+Utilise des emojis pour rendre les réponses plus lisibles.
+Pour les questions techniques, inclus des exemples concrets ou du pseudo-code quand c'est utile.
+
+=== Contexte de l'étudiant ===
+Nom: ${student?.prenom || ''} ${student?.nom || ''}
+Matricule: ${student?.matricule || ''}
+Moyenne générale: ${moyenne ? moyenne + '/20' : 'Aucune note'}
+Notes:
+${notesContext}`;
+
+    const reply = await callClaude(system, message);
+    res.json({ reply });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('AI Chat error:', err.message);
+    res.status(500).json({ message: 'Le service IA est temporairement indisponible. Réessayez dans un instant.' });
   }
 });
 
 // GET /api/ai/analyze
 router.get('/analyze', auth, async (req, res) => {
   try {
-    const student = await Student.findById(req.user.id);
+    const student = await Student.findById(req.user.id).select('-password');
     const notes = student?.notes || [];
 
     if (!notes.length) {
-      return res.json({ reply: 'Ajoutez vos notes pour recevoir une analyse personnalisée !' });
+      return res.json({ reply: '📊 Ajoutez vos notes pour recevoir une analyse personnalisée de vos performances !' });
     }
 
-    const notesText = notes.map(n =>
-      `${n.matiere}: ${n.note}/20 (coeff: ${n.coefficient}${n.tp != null ? ', TP:'+n.tp : ''}${n.cours != null ? ', Cours:'+n.cours : ''}${n.examen != null ? ', Examen:'+n.examen : ''})`
-    ).join('\n');
+    const notesContext = buildNotesContext(notes);
+    const moyenne = calcMoyenne(notes);
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: `Analyse ces notes d'un étudiant DSI en 2-3 phrases courtes. Identifie la matière la plus faible, donne un conseil pratique et termine par une phrase de motivation. Sois chaleureux et concis.\n\nNotes:\n${notesText}`
-        }]
-      })
-    });
+    const prompt = `Voici les notes d'un étudiant DSI :
 
-    const data = await response.json();
-    res.json({ reply: data.content[0].text });
+${notesContext}
 
+Moyenne générale pondérée : ${moyenne}/20
+
+Fais une analyse personnalisée en 3-4 phrases maximum :
+1. Évalue le niveau global (excellent/bon/moyen/insuffisant)
+2. Identifie la matière la plus faible et propose UN conseil pratique spécifique
+3. Identifie le point fort et encourage l'étudiant
+4. Termine par une phrase de motivation courte et sincère
+
+Sois chaleureux, direct et constructif. Utilise des emojis.`;
+
+    const reply = await callClaude(
+      'Tu es un conseiller pédagogique bienveillant et expert pour étudiants DSI en Tunisie. Réponds en français.',
+      prompt,
+      400
+    );
+
+    res.json({ reply });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('AI Analyze error:', err.message);
+    res.status(500).json({ message: 'Analyse temporairement indisponible.' });
   }
 });
 

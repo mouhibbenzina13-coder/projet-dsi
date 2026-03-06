@@ -1,177 +1,244 @@
 """
-Agent IA - Flask API
-Anaconda environment: ai-agent
-Installez avec: pip install flask flask-cors openai langchain
+Agent IA DSI — Flask API (Fixed)
+Utilise l'API Claude d'Anthropic pour des réponses intelligentes réelles.
+Installation: pip install flask flask-cors requests python-dotenv
 """
 
+import os
+import json
+import random
+import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import random
-import re
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-# ============================================
-# Base de connaissances DSI intégrée
-# ============================================
-DSI_KNOWLEDGE = {
-    "python": "Python est un langage de programmation puissant. En DSI, on l'utilise pour l'analyse de données, le machine learning et les scripts d'automatisation.",
-    "java": "Java est orienté objet, utilisé pour les applications d'entreprise. En DSI, vous l'étudierez pour les design patterns et la POO avancée.",
-    "algorithme": "Un algorithme est une suite d'instructions pour résoudre un problème. La complexité algorithmique (O(n), O(log n)) est essentielle à maîtriser.",
-    "base de données": "Les BDD relationnelles (MySQL, PostgreSQL) et NoSQL (MongoDB) sont toutes deux importantes. SQL reste fondamental pour tout développeur.",
-    "réseau": "Les réseaux informatiques couvrent TCP/IP, HTTP, les protocoles de communication. Indispensable pour comprendre les architectures web.",
-    "machine learning": "Le ML utilise des données pour entraîner des modèles prédictifs. Scikit-learn avec Python est le point d'entrée idéal.",
-    "web": "Le développement web full-stack inclut HTML/CSS, JavaScript (React, Angular), et les backends (Node.js, PHP/Symfony).",
-    "mongodb": "MongoDB est une base de données NoSQL orientée documents. Parfaite pour les applications JavaScript avec Mongoose comme ODM.",
-    "react": "React est une bibliothèque JavaScript pour créer des interfaces. Les hooks (useState, useEffect) sont au cœur de React moderne.",
-    "angular": "Angular est un framework TypeScript complet avec injection de dépendances, modules, et composants structurés.",
-}
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
+MODEL = 'claude-haiku-4-5-20251001'  # Fast & cheap for agent use
 
-def get_ai_response(question: str) -> str:
-    """Génère une réponse intelligente basée sur la question"""
-    question_lower = question.lower()
+SYSTEM_PROMPT = """Tu es un assistant IA intelligent et bienveillant pour des étudiants en 2ème année DSI (Développement des Systèmes d'Information) en Tunisie.
 
-    # Cherche dans la base de connaissances
-    for keyword, response in DSI_KNOWLEDGE.items():
-        if keyword in question_lower:
-            return f"📚 {response}"
+Tu maîtrises parfaitement :
+- Programmation : Python, Java, JavaScript, TypeScript
+- Web : HTML/CSS, React, Angular, Node.js, Express.js
+- Bases de données : SQL (MySQL, PostgreSQL), MongoDB, Mongoose
+- Algorithmique : complexité, tri, structures de données (arbres, graphes, listes)
+- Réseaux : TCP/IP, HTTP/HTTPS, DNS, protocoles
+- Systèmes d'exploitation : Linux, processus, mémoire
+- Mathématiques : algèbre linéaire, statistiques, probabilités
+- Machine Learning : Scikit-learn, NumPy, Pandas
+- Méthodes de travail : révision, organisation, gestion du temps
 
-    # Réponses contextuelles
-    if any(w in question_lower for w in ['bonjour', 'salut', 'hello', 'bonsoir']):
-        return "👋 Bonjour ! Je suis votre assistant IA DSI. Posez-moi des questions sur la programmation, les bases de données, les réseaux ou vos cours !"
-
-    if any(w in question_lower for w in ['moyenne', 'note', 'résultat']):
-        return "📊 Pour calculer votre moyenne pondérée : Σ(note × coefficient) / Σ(coefficients). Consultez votre dashboard pour voir vos statistiques en temps réel !"
-
-    if any(w in question_lower for w in ['révision', 'réviser', 'exam', 'examen']):
-        tips = [
-            "✅ Technique Pomodoro : 25 min de travail, 5 min de pause",
-            "✅ Relisez vos TDs et exercices corrigés en priorité",
-            "✅ Faites des mind maps pour les concepts complexes",
-            "✅ Expliquez les concepts à voix haute — si vous pouvez expliquer, vous avez compris !",
-        ]
-        return "📖 Conseils de révision :\n" + "\n".join(tips)
-
-    if any(w in question_lower for w in ['projet', 'mini-projet', 'travail']):
-        return "🚀 Pour un bon projet DSI : 1) Analysez les besoins, 2) Concevez l'architecture (UML), 3) Développez par modules, 4) Testez chaque composant, 5) Documentez votre code !"
-
-    if any(w in question_lower for w in ['aide', 'help', 'comment']):
-        return "🤖 Je peux vous aider sur : Python, Java, Algorithmes, BDD (SQL/MongoDB), Réseaux, React, Angular, Machine Learning, conseils de révision et gestion de projet. Posez votre question !"
-
-    # Réponse par défaut
-    fallback = [
-        f"🤔 Bonne question sur '{question[:40]}...' ! En DSI, il est important d'approfondir ce sujet. Consultez vos cours ou demandez à votre professeur pour plus de détails.",
-        f"💡 Pour '{question[:40]}...', je vous recommande de chercher dans les ressources de votre cours ou sur MDN/docs officielles.",
-        f"📚 '{question[:40]}...' est un sujet que vous étudierez en détail dans votre formation DSI. N'hésitez pas à être plus précis !",
-    ]
-    return random.choice(fallback)
+Règles :
+- Réponds TOUJOURS en français
+- Sois bienveillant, précis et pédagogique
+- Utilise des emojis pour structurer
+- Donne des exemples concrets et du code quand pertinent
+- Pour les matières difficiles, propose des ressources ou exercices pratiques
+- Maximum 300 mots par réponse sauf si l'étudiant demande plus de détails"""
 
 
-# ============================================
-# Routes Flask
-# ============================================
+def call_claude(user_message: str, system: str = SYSTEM_PROMPT, max_tokens: int = 600) -> str:
+    """Appelle l'API Claude et retourne la réponse texte."""
+    if not ANTHROPIC_API_KEY:
+        return "⚠️ Clé API Anthropic manquante. Configurez ANTHROPIC_API_KEY dans votre fichier .env"
+
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+    }
+    payload = {
+        'model': MODEL,
+        'max_tokens': max_tokens,
+        'system': system,
+        'messages': [{'role': 'user', 'content': user_message}],
+    }
+
+    try:
+        resp = requests.post(ANTHROPIC_URL, headers=headers, json=payload, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        return data['content'][0]['text']
+    except requests.exceptions.Timeout:
+        return "⏱️ Délai dépassé. Veuillez réessayer."
+    except requests.exceptions.HTTPError as e:
+        return f"❌ Erreur API ({e.response.status_code}). Vérifiez votre clé API."
+    except Exception as e:
+        return f"❌ Erreur inattendue : {str(e)}"
+
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({'status': 'ok', 'message': 'Agent IA DSI opérationnel 🤖'})
+    api_ok = bool(ANTHROPIC_API_KEY)
+    return jsonify({
+        'status': 'ok',
+        'message': 'Agent IA DSI opérationnel 🤖',
+        'ai_configured': api_ok,
+        'model': MODEL
+    })
 
 
 @app.route('/ask', methods=['POST'])
 def ask():
-    """Endpoint principal de l'agent IA"""
+    """Endpoint principal — répond à n'importe quelle question DSI."""
     data = request.get_json()
     if not data or 'question' not in data:
         return jsonify({'error': 'Champ "question" requis'}), 400
 
-    question = data['question'].strip()
+    question = data.get('question', '').strip()
     if not question:
         return jsonify({'error': 'Question vide'}), 400
 
-    response = get_ai_response(question)
+    answer = call_claude(question)
     return jsonify({
         'question': question,
-        'answer': response,
-        'agent': 'DSI-AI-Agent v1.0'
+        'answer': answer,
+        'agent': f'DSI-AI-Agent v2.0 ({MODEL})'
     })
 
 
 @app.route('/analyse-notes', methods=['POST'])
 def analyse_notes():
-    """Analyse les notes et donne des conseils personnalisés"""
+    """Analyse les notes et donne des conseils personnalisés avec Claude."""
     data = request.get_json()
     notes = data.get('notes', [])
+    student_name = data.get('name', 'l\'étudiant')
 
     if not notes:
-        return jsonify({'conseil': 'Aucune note à analyser. Ajoutez vos notes dans votre dashboard !'})
+        return jsonify({'conseil': '📊 Aucune note à analyser. Ajoutez vos notes dans votre dashboard !'})
 
-    moyenne = sum(n['note'] for n in notes) / len(notes)
-    conseils = []
+    # Build context
+    total_pondere = sum(n['note'] * n.get('coefficient', 1) for n in notes)
+    total_coeff = sum(n.get('coefficient', 1) for n in notes)
+    moyenne = round(total_pondere / total_coeff, 2) if total_coeff > 0 else 0
 
-    if moyenne >= 16:
-        conseils.append("🌟 Excellent niveau ! Vous êtes dans le top de votre promotion.")
-        conseils.append("💡 Pensez à aider vos camarades et à approfondir avec des projets personnels.")
-    elif moyenne >= 14:
-        conseils.append("✅ Très bon niveau ! Continuez sur cette lancée.")
-        conseils.append("📈 Pour progresser encore, renforcez vos points faibles.")
-    elif moyenne >= 10:
-        conseils.append("⚠️ Niveau correct mais des progrès sont possibles.")
-        conseils.append("📚 Identifiez les matières difficiles et consacrez-y plus de temps.")
-    else:
-        conseils.append("🚨 Attention ! Votre moyenne est insuffisante.")
-        conseils.append("🆘 Consultez votre professeur et mettez en place un plan de rattrapage.")
+    notes_text = '\n'.join([
+        f"- {n['matiere']}: {n['note']}/20 (coeff:{n.get('coefficient',1)}"
+        + (f", TP:{n['tp']}" if n.get('tp') is not None else '')
+        + (f", Cours:{n['cours']}" if n.get('cours') is not None else '')
+        + (f", Examen:{n['examen']}" if n.get('examen') is not None else '')
+        + ")"
+        for n in notes
+    ])
+
+    prompt = f"""Voici les notes de {student_name} :
+
+{notes_text}
+
+Moyenne générale pondérée : {moyenne}/20
+
+Analyse ces résultats en 4-5 phrases :
+1. Évalue le niveau global
+2. Identifie la matière la plus faible avec un conseil précis
+3. Mets en valeur le point fort
+4. Propose un plan d'action concret pour la semaine
+5. Termine par une phrase motivante
+
+Sois chaleureux et constructif."""
+
+    conseil_ia = call_claude(prompt, max_tokens=500)
 
     # Matière la plus faible
-    if notes:
-        plus_faible = min(notes, key=lambda n: n['note'])
-        conseils.append(f"🎯 Focus sur : {plus_faible['matiere']} ({plus_faible['note']}/20)")
+    plus_faible = min(notes, key=lambda n: n['note'])
+    niveau = ('Excellent' if moyenne >= 16 else
+              'Très bien' if moyenne >= 14 else
+              'Bien'      if moyenne >= 10 else 'Insuffisant')
 
     return jsonify({
-        'moyenne': round(moyenne, 2),
-        'niveau': 'Excellent' if moyenne >= 16 else 'Très bien' if moyenne >= 14 else 'Bien' if moyenne >= 10 else 'Insuffisant',
-        'conseils': conseils
+        'moyenne': moyenne,
+        'niveau': niveau,
+        'conseil': conseil_ia,
+        'plus_faible': plus_faible['matiere'],
     })
 
 
 @app.route('/quiz', methods=['GET'])
 def quiz():
-    """Génère un quiz aléatoire pour réviser"""
-    questions = [
-        {
-            'question': "Quelle est la complexité temporelle d'un tri rapide (QuickSort) en moyenne ?",
-            'options': ['O(n)', 'O(n log n)', 'O(n²)', 'O(log n)'],
-            'answer': 1,
-            'explication': 'QuickSort a une complexité moyenne de O(n log n), mais O(n²) dans le pire cas.'
-        },
-        {
-            'question': "Qu'est-ce qu'une clé étrangère en SQL ?",
-            'options': ['Une clé de chiffrement', 'Une référence vers la clé primaire d\'une autre table', 'Un index unique', 'Un type de jointure'],
-            'answer': 1,
-            'explication': 'La clé étrangère (FOREIGN KEY) assure l\'intégrité référentielle entre deux tables.'
-        },
-        {
-            'question': "Quel hook React permet de gérer les effets de bord ?",
-            'options': ['useState', 'useEffect', 'useContext', 'useRef'],
-            'answer': 1,
-            'explication': 'useEffect s\'exécute après chaque rendu et gère les appels API, abonnements, etc.'
-        },
-        {
-            'question': "Quelle commande crée un nouveau projet Angular ?",
-            'options': ['ng create app', 'ng new mon-app', 'angular new mon-app', 'npx angular mon-app'],
-            'answer': 1,
-            'explication': 'ng new est la commande Angular CLI pour créer un nouveau projet.'
-        },
-        {
-            'question': "Dans MongoDB, comment s'appelle un enregistrement ?",
-            'options': ['Row (ligne)', 'Record', 'Document', 'Tuple'],
-            'answer': 2,
-            'explication': 'MongoDB stocke les données sous forme de documents JSON (BSON).'
-        },
+    """Génère un quiz aléatoire avec Claude (ou depuis la banque statique)."""
+    topic = request.args.get('topic', '')
+
+    # Static quiz bank as fallback
+    quiz_bank = [
+        {'question': "Complexité de QuickSort en moyenne ?",
+         'options': ['O(n)', 'O(n log n)', 'O(n²)', 'O(log n)'], 'answer': 1,
+         'explication': 'QuickSort : O(n log n) en moyenne, O(n²) dans le pire cas.'},
+        {'question': "Qu'est-ce qu'une clé étrangère en SQL ?",
+         'options': ['Clé de chiffrement', 'Référence vers une clé primaire d\'une autre table', 'Index unique', 'Type de jointure'],
+         'answer': 1, 'explication': 'FOREIGN KEY assure l\'intégrité référentielle.'},
+        {'question': "Quel hook React gère les effets de bord ?",
+         'options': ['useState', 'useEffect', 'useContext', 'useRef'], 'answer': 1,
+         'explication': 'useEffect s\'exécute après le rendu (appels API, abonnements...).'},
+        {'question': "Commande pour créer un projet Angular ?",
+         'options': ['ng create app', 'ng new mon-app', 'angular new mon-app', 'npx angular'],
+         'answer': 1, 'explication': 'ng new est la commande CLI Angular.'},
+        {'question': "Dans MongoDB, un enregistrement s'appelle :",
+         'options': ['Row', 'Record', 'Document', 'Tuple'], 'answer': 2,
+         'explication': 'MongoDB stocke les données en documents JSON/BSON.'},
+        {'question': "Combien de couches dans le modèle OSI ?",
+         'options': ['4', '5', '6', '7'], 'answer': 3,
+         'explication': '7 couches : Physique, Liaison, Réseau, Transport, Session, Présentation, Application.'},
+        {'question': "TypeScript est :",
+         'options': ['Un langage compilé en C', 'Un superset typé de JavaScript', 'Un framework web', 'Une base de données'],
+         'answer': 1, 'explication': 'TypeScript ajoute le typage statique à JavaScript.'},
+        {'question': "Méthode HTTP pour créer une ressource REST ?",
+         'options': ['GET', 'PUT', 'POST', 'DELETE'], 'answer': 2,
+         'explication': 'POST crée une nouvelle ressource. PUT met à jour une existante.'},
     ]
-    q = random.choice(questions)
-    return jsonify(q)
+
+    # If topic provided and API key available, generate with Claude
+    if topic and ANTHROPIC_API_KEY:
+        prompt = f"""Génère une question de quiz sur le thème "{topic}" pour un étudiant DSI.
+Réponds UNIQUEMENT en JSON valide avec cette structure exacte :
+{{
+  "question": "...",
+  "options": ["option A", "option B", "option C", "option D"],
+  "answer": <index 0-3 de la bonne réponse>,
+  "explication": "Explication courte en 1-2 phrases."
+}}"""
+        try:
+            raw = call_claude(prompt, max_tokens=300)
+            # Extract JSON from response
+            start = raw.find('{')
+            end = raw.rfind('}') + 1
+            if start >= 0 and end > start:
+                q = json.loads(raw[start:end])
+                if all(k in q for k in ['question', 'options', 'answer', 'explication']):
+                    return jsonify(q)
+        except Exception:
+            pass  # Fall through to static bank
+
+    return jsonify(random.choice(quiz_bank))
+
+
+@app.route('/explain', methods=['POST'])
+def explain():
+    """Explique un concept DSI en détail."""
+    data = request.get_json()
+    concept = data.get('concept', '').strip()
+    if not concept:
+        return jsonify({'error': 'Concept requis'}), 400
+
+    prompt = f"""Explique le concept "{concept}" à un étudiant de 2ème année DSI.
+
+Structure ta réponse ainsi :
+1. 📌 Définition simple (2-3 phrases)
+2. 💡 Exemple concret (code ou schéma si pertinent)
+3. 🔗 Lien avec d'autres concepts DSI
+4. ✅ Points clés à retenir (3 maximum)"""
+
+    explanation = call_claude(prompt, max_tokens=700)
+    return jsonify({'concept': concept, 'explanation': explanation})
 
 
 if __name__ == '__main__':
-    print("🤖 Agent IA DSI démarré sur http://localhost:8000")
-    app.run(debug=True, port=8000)
+    port = int(os.environ.get('PORT', 8000))
+    debug = os.environ.get('FLASK_ENV', 'development') == 'development'
+    print(f"🤖 Agent IA DSI v2.0 démarré sur http://localhost:{port}")
+    print(f"🔑 API Key configurée: {'✅ Oui' if ANTHROPIC_API_KEY else '❌ Non (ANTHROPIC_API_KEY manquante)'}")
+    app.run(debug=debug, port=port, host='0.0.0.0')

@@ -688,7 +688,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.02);}
         <div class="section-title">Toutes mes Notes <span id="notes-count"></span></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Matière</th><th>Note</th><th>Coefficient</th><th>Semestre</th><th>Action</th></tr></thead>
+            <thead><tr><th>Matière</th><th>TP</th><th>Cours</th><th>Examen</th><th>Moyenne</th><th>Coeff</th><th>Semestre</th><th>Action</th></tr></thead>
             <tbody id="notes-tbody"></tbody>
           </table>
         </div>
@@ -925,17 +925,10 @@ let state = {
 };
 
 // ============================================
-// DEMO DATA
+// DEMO DATA — only used if API notes are empty
 // ============================================
 function initDemoData() {
-  state.notes = [
-    { id:1, matiere:'Algorithmique', note:16, coefficient:3, semestre:'S2' },
-    { id:2, matiere:'Bases de Données', note:14, coefficient:2, semestre:'S2' },
-    { id:3, matiere:'Développement Web', note:17, coefficient:3, semestre:'S2' },
-    { id:4, matiere:'Réseaux', note:13, coefficient:2, semestre:'S2' },
-    { id:5, matiere:'Systèmes d\'Exploitation', note:15, coefficient:2, semestre:'S1' },
-    { id:6, matiere:'Mathématiques', note:12, coefficient:3, semestre:'S1' },
-  ];
+  // Only set demo courses (notes come from API per student)
   state.courses = [
     { id:1, nom:'Algorithmique Avancée', professeur:'Prof. Messaoudi', semestre:'S2', coefficient:3, couleur:'#22d3a0' },
     { id:2, nom:'Bases de Données', professeur:'Prof. Khelifi', semestre:'S2', coefficient:2, couleur:'#60a5fa' },
@@ -944,6 +937,8 @@ function initDemoData() {
     { id:5, nom:'Architecture Logicielle', professeur:'Prof. Saidi', semestre:'S2', coefficient:2, couleur:'#a78bfa' },
     { id:6, nom:'Intelligence Artificielle', professeur:'Prof. Zouari', semestre:'S2', coefficient:3, couleur:'#34d399' },
   ];
+  // Notes start empty — loaded per-student from API
+  state.notes = [];
 }
 
 // ============================================
@@ -1054,11 +1049,10 @@ async function loadMyNotes() {
     });
     if(res.ok) {
       const data = await res.json();
-      if(data.notes && data.notes.length > 0) {
-        state.notes = data.notes;
-      }
+      // Always use API notes — each student has their own
+      state.notes = data.notes || [];
     }
-  } catch(e) { console.log('Could not load notes from API'); }
+  } catch(e) { console.log('Could not load notes from API:', e.message); }
 }
 
 function applyRoleUI() {
@@ -1217,19 +1211,19 @@ function renderNotes() {
 
   tbody.innerHTML = state.notes.map(n => {
     const nid = n._id || n.id;
-    const badge = cls => `note-badge ${cls}`;
     const bc = n.note>=14?'note-high':n.note>=10?'note-mid':'note-low';
+    const fmt = v => v != null && v !== undefined ? `<span style="font-weight:600">${v}</span>/20` : '<span style="color:var(--muted)">—</span>';
     return `<tr>
       <td style="font-weight:500">${n.matiere}</td>
-      <td style="color:var(--blue)">${n.tp!=null?n.tp+'/20':'—'}</td>
-      <td style="color:var(--purple)">${n.cours!=null?n.cours+'/20':'—'}</td>
-      <td style="color:var(--yellow)">${n.examen!=null?n.examen+'/20':'—'}</td>
-      <td><span class="${badge(bc)}">${n.note}/20</span></td>
-      <td style="color:var(--muted)">${n.coefficient}</td>
-      <td><span class="chip ${n.semestre==='S1'?'blue':'green'}">${n.semestre}</span></td>
+      <td style="color:var(--blue)">${fmt(n.tp)}</td>
+      <td style="color:var(--purple)">${fmt(n.cours)}</td>
+      <td style="color:var(--yellow)">${fmt(n.examen)}</td>
+      <td><span class="note-badge ${bc}">${n.note}/20</span></td>
+      <td style="color:var(--muted);text-align:center">${n.coefficient}</td>
+      <td><span class="chip ${n.semestre==='S1'?'blue':'green'}">${n.semestre||'S1'}</span></td>
       <td><button onclick="deleteNote('${nid}')" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:var(--red);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Outfit',sans-serif">🗑</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Aucune note ajoutée</td></tr>';
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Aucune note ajoutée — utilisez le formulaire ci-dessus pour commencer !</td></tr>';
 
   updateNoteStats();
 }
@@ -1275,23 +1269,25 @@ function updateNotePreview() {
 
 async function addNote() {
   const matiere = document.getElementById('n-matiere').value.trim();
-  const tp = document.getElementById('n-tp').value !== '' ? parseFloat(document.getElementById('n-tp').value) : null;
-  const cours = document.getElementById('n-cours').value !== '' ? parseFloat(document.getElementById('n-cours').value) : null;
-  const examen = document.getElementById('n-note').value !== '' ? parseFloat(document.getElementById('n-note').value) : null;
-  if(!matiere) { alert('Entrez le nom de la matière'); return; }
-  if(tp===null && cours===null && examen===null) { alert('Entrez au moins une note'); return; }
+  const tp      = document.getElementById('n-tp').value    !== '' ? parseFloat(document.getElementById('n-tp').value)    : null;
+  const cours   = document.getElementById('n-cours').value !== '' ? parseFloat(document.getElementById('n-cours').value) : null;
+  const examen  = document.getElementById('n-note').value  !== '' ? parseFloat(document.getElementById('n-note').value)  : null;
 
-  // Calculate weighted average
+  if(!matiere) { alert('⚠️ Entrez le nom de la matière'); return; }
+  if(tp===null && cours===null && examen===null) { alert('⚠️ Entrez au moins une note (TP, Cours ou Examen)'); return; }
+
+  // Calculate weighted average locally for display
   let sum = 0, weight = 0;
-  if(tp!==null) { sum += tp*0.3; weight+=0.3; }
+  if(tp!==null)    { sum += tp*0.3;    weight+=0.3; }
   if(cours!==null) { sum += cours*0.3; weight+=0.3; }
-  if(examen!==null) { sum += examen*0.4; weight+=0.4; }
+  if(examen!==null){ sum += examen*0.4;weight+=0.4; }
   const note = parseFloat((sum/weight).toFixed(2));
   const coefficient = parseInt(document.getElementById('n-coeff').value)||1;
   const semestre = document.getElementById('n-sem').value;
 
   const btn = document.querySelector('#page-notes .btn-primary');
-  btn.textContent = 'Enregistrement...'; btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Enregistrement...'; btn.disabled = true;
 
   try {
     const res = await fetch(API_URL + '/api/students/me/notes', {
@@ -1302,21 +1298,30 @@ async function addNote() {
     if(res.ok) {
       const notes = await res.json();
       state.notes = notes;
+      // Clear form
       document.getElementById('n-matiere').value = '';
-      document.getElementById('n-tp').value = '';
-      document.getElementById('n-cours').value = '';
-      document.getElementById('n-note').value = '';
+      document.getElementById('n-tp').value      = '';
+      document.getElementById('n-cours').value   = '';
+      document.getElementById('n-note').value    = '';
       document.getElementById('note-preview').textContent = '—';
       renderNotes(); renderDashboard();
-      // AI Analysis after adding note
       analyzeNotesWithAI();
+      // Success feedback
+      btn.textContent = '✅ Note enregistrée !';
+      btn.style.background = 'var(--green)';
+      setTimeout(() => { btn.textContent = origText; btn.style.background=''; }, 2000);
+    } else {
+      const err = await res.json();
+      alert('❌ ' + (err.message || 'Erreur lors de l\'enregistrement'));
     }
   } catch(e) {
-    // Fallback to local if API fails
+    // Offline fallback — save locally
     state.notes.push({ id: Date.now(), matiere, note, tp, cours, examen, coefficient, semestre });
     renderNotes(); renderDashboard();
+    btn.textContent = '⚠️ Sauvegardé localement';
+    setTimeout(() => { btn.textContent = origText; btn.style.background=''; }, 2500);
   } finally {
-    btn.textContent = '💾 Enregistrer la note'; btn.disabled = false;
+    btn.disabled = false;
   }
 }
 
