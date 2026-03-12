@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EduDSI — Plateforme Étudiante</title>
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="EduDSI – Plateforme étudiante intelligente pour la 2ème année DSI. Gérez vos cours, notes, emploi du temps, révisez avec l'IA et testez vos connaissances."/>
+<meta name="keywords" content="EduDSI, DSI, étudiant, cours, notes, quiz, IA, plateforme étudiante, Tunisie, informatique, révision"/>
+<meta name="author" content="EduDSI"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://dsi-tn.netlify.app/"/>
+
+<!-- Open Graph (Facebook, WhatsApp, LinkedIn preview) -->
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://dsi-tn.netlify.app/"/>
+<meta property="og:title" content="EduDSI — Plateforme Étudiante"/>
+<meta property="og:description" content="Plateforme étudiante intelligente – Gérez vos cours, notes, emploi du temps et révisez avec l'IA. Ouverte à tous les étudiants DSI."/>
+<meta property="og:image" content="https://dsi-tn.netlify.app/preview.png"/>
+<meta property="og:locale" content="fr_FR"/>
+<meta property="og:site_name" content="EduDSI"/>
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="EduDSI — Plateforme Étudiante"/>
+<meta name="twitter:description" content="Plateforme étudiante intelligente – Cours, notes, quiz IA pour les étudiants DSI."/>
+<meta name="twitter:image" content="https://dsi-tn.netlify.app/preview.png"/>
+
+<!-- Language & Geo -->
+<meta http-equiv="content-language" content="fr"/>
+<meta name="language" content="French"/>
+
+<!-- Bing Webmaster Verification -->
+<meta name="msvalidate.01" content="220A18023FA933D07061A0EBD257DF9E"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#060610;
+  --bg2:#0c0c1a;
+  --card:#111125;
+  --card2:#16162e;
+  --border:#1f1f3a;
+  --border2:#2a2a4a;
+  --text:#f0f0ff;
+  --muted:#7070a0;
+  --muted2:#5050808;
+  --green:#22d3a0;
+  --blue:#60a5fa;
+  --pink:#f472b6;
+  --yellow:#fbbf24;
+  --purple:#a78bfa;
+  --red:#f87171;
+  --grad:linear-gradient(135deg,#22d3a0,#60a5fa);
+}
+body{
+  font-family:'Outfit',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ===== NOISE TEXTURE ===== */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;opacity:.4;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:240px;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:0;z-index:100;
+  transition:transform .3s;
+}
+.sidebar-logo{
+  padding:28px 24px 20px;
+  border-bottom:1px solid var(--border);
+}
+.logo-text{
+  font-size:22px;font-weight:800;
+  background:var(--grad);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:-0.5px;
+}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+
+.nav{flex:1;padding:16px 12px;overflow-y:auto;}
+.nav-section{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;padding:8px 12px 6px;font-family:'JetBrains Mono',monospace;}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 12px;border-radius:10px;
+  cursor:pointer;font-size:14px;font-weight:500;
+  color:var(--muted);transition:all .2s;margin-bottom:2px;
+  border:1px solid transparent;
+}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.04);}
+.nav-item.active{
+  color:var(--green);background:rgba(34,211,160,0.08);
+  border-color:rgba(34,211,160,0.2);
+}
+.nav-icon{font-size:18px;width:22px;text-align:center;}
+
+.sidebar-footer{
+  padding:16px;border-top:1px solid var(--border);
+}
+.user-card{
+  display:flex;align-items:center;gap:10px;
+  padding:10px;border-radius:10px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--border);
+}
+.avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--grad);display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;color:#000;flex-shrink:0;
+}
+.user-name{font-size:13px;font-weight:600;}
+.user-level{font-size:11px;color:var(--muted);}
+
+/* ===== MAIN ===== */
+.main{margin-left:240px;min-height:100vh;}
+.topbar{
+  padding:20px 32px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);background:rgba(6,6,16,0.8);
+  backdrop-filter:blur(12px);position:sticky;top:0;z-index:50;
+}
+.page-title{font-size:20px;font-weight:700;}
+.page-title span{color:var(--green);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.btn{
+  padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;font-family:'Outfit',sans-serif;transition:all .2s;
+}
+.btn-primary{background:var(--green);color:#000;}
+.btn-primary:hover{background:#1bc490;transform:translateY(-1px);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2);}
+
+/* ===== PAGE CONTENT ===== */
+.page{display:none;padding:32px;}
+.page.active{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== CARDS ===== */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:24px;
+}
+.card-sm{padding:16px 20px;}
+
+/* ===== STATS GRID ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:20px;
+  transition:transform .2s,border-color .2s;
+  position:relative;overflow:hidden;
+}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--border2);}
+.stat-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+}
+.stat-card.green::before{background:var(--green);}
+.stat-card.blue::before{background:var(--blue);}
+.stat-card.pink::before{background:var(--pink);}
+.stat-card.yellow::before{background:var(--yellow);}
+.stat-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-family:'JetBrains Mono',monospace;}
+.stat-value{font-size:32px;font-weight:800;line-height:1;}
+.stat-value.green{color:var(--green);}
+.stat-value.blue{color:var(--blue);}
+.stat-value.pink{color:var(--pink);}
+.stat-value.yellow{color:var(--yellow);}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:6px;}
+
+/* ===== GRID LAYOUTS ===== */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+
+/* ===== SECTION TITLE ===== */
+.section-title{
+  font-size:16px;font-weight:700;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.section-title span{color:var(--muted);font-size:12px;font-weight:400;font-family:'JetBrains Mono',monospace;}
+
+/* ===== COURSE CARDS ===== */
+.course-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:20px;
+  transition:all .2s;cursor:pointer;
+  border-left:3px solid var(--green);
+}
+.course-card:hover{transform:translateY(-2px);background:var(--card2);}
+.course-name{font-size:15px;font-weight:600;margin-bottom:4px;}
+.course-meta{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.course-badge{
+  display:inline-block;padding:3px 8px;border-radius:6px;
+  font-size:11px;font-weight:600;margin-top:8px;
+}
+
+/* ===== NOTES TABLE ===== */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  text-align:left;padding:10px 14px;
+  font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;
+  border-bottom:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;
+}
+tbody td{padding:12px 14px;font-size:14px;border-bottom:1px solid rgba(255,255,255,0.03);}
+tbody tr:hover td{background:rgba(255,255,255,0.02);}
+.note-badge{
+  display:inline-block;padding:3px 10px;border-radius:20px;
+  font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;
+}
+.note-high{background:rgba(34,211,160,0.12);color:var(--green);}
+.note-mid{background:rgba(251,191,36,0.12);color:var(--yellow);}
+.note-low{background:rgba(248,113,113,0.12);color:var(--red);}
+
+/* ===== AI CHAT ===== */
+.chat-container{display:flex;flex-direction:column;height:500px;}
+.chat-messages{
+  flex:1;overflow-y:auto;padding:20px;
+  display:flex;flex-direction:column;gap:14px;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+.msg{display:flex;gap:10px;align-items:flex-start;animation:msgIn .3s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse;}
+.msg-avatar{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+}
+.msg-avatar.ai{background:rgba(34,211,160,0.15);border:1px solid rgba(34,211,160,0.3);}
+.msg-avatar.user{background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);}
+.msg-bubble{
+  max-width:75%;padding:12px 16px;border-radius:16px;
+  font-size:14px;line-height:1.6;
+}
+.msg.ai .msg-bubble{background:var(--card2);border:1px solid var(--border);border-radius:4px 16px 16px 16px;}
+.msg.user .msg-bubble{background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.2);border-radius:16px 4px 16px 16px;}
+.chat-input-wrap{
+  padding:16px 20px;border-top:1px solid var(--border);
+  display:flex;gap:10px;align-items:center;
+}
+.chat-input{
+  flex:1;background:var(--card2);border:1px solid var(--border);
+  border-radius:10px;padding:11px 16px;color:var(--text);
+  font-size:14px;font-family:'Outfit',sans-serif;outline:none;
+  transition:border-color .2s;
+}
+.chat-input:focus{border-color:rgba(34,211,160,0.4);}
+.chat-send{
+  width:40px;height:40px;border-radius:10px;
+  background:var(--green);color:#000;border:none;
+  cursor:pointer;font-size:18px;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.chat-send:hover{background:#1bc490;transform:scale(1.05);}
+
+/* ===== QUIZ ===== */
+.quiz-question{font-size:17px;font-weight:600;margin-bottom:20px;line-height:1.5;}
+.quiz-options{display:flex;flex-direction:column;gap:10px;}
+.quiz-opt{
+  padding:14px 18px;border-radius:12px;
+  background:var(--card2);border:1px solid var(--border);
+  cursor:pointer;font-size:14px;font-weight:500;
+  transition:all .2s;text-align:left;color:var(--text);
+  font-family:'Outfit',sans-serif;
+}
+.quiz-opt:hover{border-color:rgba(96,165,250,0.4);background:rgba(96,165,250,0.05);}
+.quiz-opt.correct{border-color:var(--green);background:rgba(34,211,160,0.1);color:var(--green);}
+.quiz-opt.wrong{border-color:var(--red);background:rgba(248,113,113,0.1);color:var(--red);}
+.quiz-explain{
+  margin-top:16px;padding:14px;border-radius:10px;
+  background:rgba(34,211,160,0.08);border:1px solid rgba(34,211,160,0.2);
+  font-size:13px;color:var(--green);line-height:1.6;
+}
+
+/* ===== FORM ===== */
+.form-group{margin-bottom:16px;}
+.form-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;}
+.form-input,.form-select{
+  width:100%;background:var(--card2);border:1px solid var(--border);
+  border-radius:10px;padding:11px 14px;color:var(--text);
+  font-size:14px;font-family:'Outfit',sans-serif;outline:none;
+  transition:border-color .2s;
+}
+.form-input:focus,.form-select:focus{border-color:rgba(34,211,160,0.4);}
+.form-select{cursor:pointer;}
+
+/* ===== BAR CHART ===== */
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:12px;}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.bar{
+  width:100%;border-radius:6px 6px 0 0;
+  background:var(--grad);transition:height .5s ease;min-height:4px;
+}
+.bar-label{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:center;}
+.bar-val{font-size:11px;font-weight:700;color:var(--green);}
+
+/* ===== SCHEDULE ===== */
+.schedule-grid{display:grid;grid-template-columns:auto repeat(5,1fr);gap:1px;background:var(--border);border-radius:12px;overflow:hidden;}
+.sch-cell{background:var(--card);padding:8px;font-size:12px;}
+.sch-header{background:var(--card2);font-weight:600;text-align:center;padding:10px 8px;font-size:12px;color:var(--muted);}
+.sch-time{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;padding:10px 12px;background:var(--card2);}
+.sch-course{
+  border-radius:6px;padding:6px 8px;font-size:11px;font-weight:600;
+  margin:2px;
+}
+
+/* ===== LOGIN ===== */
+#login-page{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;background:var(--bg);
+}
+.login-box{
+  width:420px;background:var(--card);
+  border:1px solid var(--border);border-radius:20px;padding:40px;
+}
+.login-logo{text-align:center;margin-bottom:32px;}
+.login-logo .logo-big{font-size:32px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.login-tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--bg2);padding:4px;border-radius:10px;}
+.login-tab{flex:1;padding:9px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.login-tab.active{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.login-form{display:none;}
+.login-form.active{display:block;}
+.login-form .form-input{background:var(--bg2);}
+.login-btn{width:100%;padding:13px;background:var(--green);color:#000;font-weight:700;font-size:15px;border:none;border-radius:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;margin-top:8px;}
+.login-btn:hover{background:#1bc490;transform:translateY(-1px);}
+.login-error{color:var(--red);font-size:13px;margin-top:8px;display:none;}
+
+/* ===== PROGRESS ===== */
+.progress-bar-wrap{background:var(--bg2);border-radius:100px;height:8px;overflow:hidden;margin-top:6px;}
+.progress-bar{height:100%;border-radius:100px;background:var(--grad);transition:width .6s ease;}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .main{margin-left:0}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ===== CHIP ===== */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.chip.green{background:rgba(34,211,160,0.1);color:var(--green);border:1px solid rgba(34,211,160,0.2);}
+.chip.blue{background:rgba(96,165,250,0.1);color:var(--blue);border:1px solid rgba(96,165,250,0.2);}
+.chip.yellow{background:rgba(251,191,36,0.1);color:var(--yellow);border:1px solid rgba(251,191,36,0.2);}
+
+.typing{display:flex;gap:4px;padding:8px 0;}
+.dot-t{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite;}
+.dot-t:nth-child(2){animation-delay:.2s}
+.dot-t:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN PAGE ===== -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-big">EduDSI</div>
+      <div style="color:var(--muted);font-size:13px;margin-top:4px;">Plateforme étudiante 2ème DSI</div>
+    </div>
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="switchTab('login')">Connexion</button>
+      <button class="login-tab" onclick="switchTab('register')">Inscription</button>
+    </div>
+
+    <!-- Login form -->
+    <div class="login-form active" id="form-login">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="login-email" placeholder="etudiant@dsi.edu" value=""/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mot de passe</label>
+        <input class="form-input" type="password" id="login-password" placeholder="••••••••" value=""/>
+      </div>
+      <div class="login-error" id="login-err"></div>
+      <button class="login-btn" onclick="doLogin()">Se connecter →</button>
+      <div style="text-align:center;margin-top:12px;">
+        <span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="showForgotPassword()">Mot de passe oublié ?</span>
+      </div>
+      
+    </div>
+
+    <!-- Register form -->
+    <div class="login-form" id="form-register">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Nom</label>
+          <input class="form-input" type="text" id="reg-nom" placeholder="Benali"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prénom</label>
+          <input class="form-input" type="text" id="reg-prenom" placeholder="Yasmine"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="reg-email" placeholder="vous@dsi.edu"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mot de passe</label>
+        <input class="form-input" type="password" id="reg-password" placeholder="••••••••"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rôle</label>
+        <select class="form-input" id="reg-role">
+          <option value="student">🎓 Étudiant</option>
+          <option value="teacher">👨‍🏫 Enseignant</option>
+        </select>
+      </div>
+      <div class="login-error" id="reg-err"></div>
+      <button class="login-btn" onclick="doRegister()">Créer mon compte →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FORGOT PASSWORD MODAL ===== -->
+<div id="forgot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;width:400px;max-width:90vw">
+    <div style="font-size:18px;font-weight:700;margin-bottom:8px">🔐 Mot de passe oublié</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Entrez votre email et nous vous enverrons un lien de réinitialisation.</div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="forgot-email" type="email" placeholder="votre@email.com"/>
+    </div>
+    <div id="forgot-msg" style="font-size:13px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="hideForgotPassword()">Annuler</button>
+      <button class="login-btn" style="flex:2;margin-top:0" onclick="doForgotPassword()">Envoyer le lien</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app" style="display:none">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">EduDSI</div>
+      <div class="logo-sub">v1.0 · 2ème Année DSI</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Principal</div>
+      <div class="nav-item active" onclick="showPage('dashboard',this)">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('cours',this)">
+        <span class="nav-icon">📚</span> Mes Cours
+      </div>
+      <div class="nav-item" onclick="showPage('notes',this)">
+        <span class="nav-icon">📝</span> Mes Notes
+      </div>
+      <div class="nav-item" onclick="showPage('emploi',this)">
+        <span class="nav-icon">📅</span> Emploi du Temps
+      </div>
+      <div class="nav-section">IA & Outils</div>
+
+      <div class="nav-item" onclick="showPage('quiz',this)">
+        <span class="nav-icon">🧠</span> Quiz Révision
+      </div>
+      <div class="nav-section">Compte</div>
+      <div class="nav-item" onclick="showPage('profil',this)">
+        <span class="nav-icon">👤</span> Mon Profil
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" id="sidebar-avatar">Y</div>
+        <div>
+          <div class="user-name" id="sidebar-name">Yasmine B.</div>
+          <div id="user-role-badge" style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:1px;">🎓 Étudiant</div>
+<div class="user-level">2ème DSI · S2</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="page-title" id="page-title">Tableau de <span>bord</span></div>
+      <div class="topbar-right">
+        <span class="chip green">● En ligne</span>
+        <button class="btn btn-ghost" onclick="doLogout()">Déconnexion</button>
+      </div>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Moyenne Générale</div>
+          <div class="stat-value green" id="stat-moyenne">14.8</div>
+          <div class="stat-sub">Sur 20 points</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Cours Suivis</div>
+          <div class="stat-value blue" id="stat-cours">8</div>
+          <div class="stat-sub">Ce semestre</div>
+        </div>
+        <div class="stat-card pink">
+          <div class="stat-label">Notes Saisies</div>
+          <div class="stat-value pink" id="stat-notes">12</div>
+          <div class="stat-sub">Résultats enregistrés</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Quiz Réussis</div>
+          <div class="stat-value yellow" id="stat-quiz">5</div>
+          <div class="stat-sub">Sur 10 tentatives</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px">
+        <!-- Bar chart des notes -->
+        <div class="card">
+          <div class="section-title">Évolution des Notes <span>Dernières matières</span></div>
+          <div class="bar-chart" id="bar-chart"></div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="card">
+          <div class="section-title">Actions Rapides</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+
+            <button class="btn btn-ghost" style="justify-content:flex-start;display:flex;align-items:center;gap:10px;padding:14px 16px;width:100%;border-radius:12px;font-size:14px" onclick="showPage('quiz',document.querySelector('[onclick*=quiz]'))">
+              🧠 Commencer un Quiz de révision
+            </button>
+            <button class="btn btn-ghost" style="justify-content:flex-start;display:flex;align-items:center;gap:10px;padding:14px 16px;width:100%;border-radius:12px;font-size:14px" onclick="showPage('notes',document.querySelector('[onclick*=notes]'))">
+              📝 Ajouter une nouvelle note
+            </button>
+            <button class="btn btn-ghost" style="justify-content:flex-start;display:flex;align-items:center;gap:10px;padding:14px 16px;width:100%;border-radius:12px;font-size:14px" onclick="showPage('emploi',document.querySelector('[onclick*=emploi]'))">
+              📅 Voir l'emploi du temps
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent notes -->
+      <div class="card">
+        <div class="section-title">Dernières Notes <span id="dash-count"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Matière</th><th>Note</th><th>Coefficient</th><th>Semestre</th><th>Appréciation</th></tr></thead>
+            <tbody id="dash-notes-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== COURS ===== -->
+    <div class="page" id="page-cours">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <div>
+          <h2 style="font-size:20px;font-weight:700">Mes Cours</h2>
+          <p style="color:var(--muted);font-size:14px;margin-top:2px">2ème Année DSI — Semestre 2</p>
+        </div>
+        <button class="btn btn-primary" onclick="toggleAddCourse()">+ Ajouter un cours</button>
+      </div>
+
+      <!-- Add course form -->
+      <div class="card" id="add-course-form" style="display:none;margin-bottom:20px">
+        <div class="section-title">Nouveau Cours</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Nom du cours</label>
+            <input class="form-input" id="c-nom" placeholder="ex: Algorithmique Avancée"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Professeur</label>
+            <input class="form-input" id="c-prof" placeholder="ex: Prof. Benali"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Semestre</label>
+            <select class="form-select" id="c-sem"><option>S1</option><option selected>S2</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Coefficient</label>
+            <input class="form-input" type="number" id="c-coeff" value="2" min="1" max="5"/>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addCourse()">Ajouter le cours</button>
+      </div>
+
+      <div class="grid-3" id="courses-grid"></div>
+    </div>
+
+    <!-- ===== NOTES ===== -->
+    <div class="page" id="page-notes">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:20px;font-weight:700">Mes Notes</h2>
+        <p style="color:var(--muted);font-size:14px;margin-top:2px">Suivi de vos résultats académiques</p>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px">
+        <!-- Add note -->
+        <div class="card">
+          <div class="section-title">Ajouter une Note</div>
+          <div class="form-group">
+            <label class="form-label">Matière</label>
+            <input class="form-input" id="n-matiere" placeholder="ex: Bases de Données"/>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label class="form-label">📝 TP (/20)</label>
+              <input class="form-input" type="number" id="n-tp" placeholder="—" min="0" max="20" step="0.25"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">📖 Cours (/20)</label>
+              <input class="form-input" type="number" id="n-cours" placeholder="—" min="0" max="20" step="0.25"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">📋 Examen (/20)</label>
+              <input class="form-input" type="number" id="n-note" placeholder="—" min="0" max="20" step="0.25"/>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label class="form-label">Coefficient</label>
+              <input class="form-input" type="number" id="n-coeff" value="2" min="1" max="5"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Semestre</label>
+              <select class="form-select" id="n-sem"><option>S1</option><option selected>S2</option></select>
+            </div>
+          </div>
+          <div style="background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.2);border-radius:10px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--muted)">
+            💡 Moyenne calculée : <strong id="note-preview" style="color:var(--green)">—</strong> &nbsp;(TP×30% + Cours×30% + Examen×40%)
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="addNote()">💾 Enregistrer la note</button>
+        </div>
+
+        <!-- Stats box -->
+        <div class="card">
+          <div class="section-title">Statistiques</div>
+          <div style="display:flex;flex-direction:column;gap:14px" id="notes-stats">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+                <span style="color:var(--muted)">Moyenne Générale</span>
+                <span style="color:var(--green);font-weight:700" id="st-moy">—</span>
+              </div>
+              <div class="progress-bar-wrap"><div class="progress-bar" id="pb-moy" style="width:0%"></div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:var(--card2);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:var(--green)" id="st-max">—</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">Meilleure</div>
+              </div>
+              <div style="background:var(--card2);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:var(--red)" id="st-min">—</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">Plus basse</div>
+              </div>
+            </div>
+            <div style="background:rgba(34,211,160,0.06);border:1px solid rgba(34,211,160,0.15);border-radius:10px;padding:14px;">
+              <div style="font-size:12px;color:var(--green);margin-bottom:4px;font-family:'JetBrains Mono',monospace">CONSEIL IA</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.6" id="ai-conseil">Ajoutez vos notes pour recevoir des conseils personnalisés !</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="section-title">Toutes mes Notes <span id="notes-count"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Matière</th><th>TP</th><th>Cours</th><th>Examen</th><th>Moyenne</th><th>Coeff</th><th>Semestre</th><th>Action</th></tr></thead>
+            <tbody id="notes-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== EMPLOI DU TEMPS ===== -->
+    <div class="page" id="page-emploi">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h2 style="font-size:20px;font-weight:700">Emploi du Temps</h2>
+          <p style="color:var(--muted);font-size:14px;margin-top:2px" id="sch-subtitle">Semaine type</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select class="form-select" id="sch-classe" onchange="onScheduleChange()" style="width:140px">
+            <option value="1ere">1ère DSI</option>
+            <option value="2eme" selected>2ème DSI</option>
+            <option value="3eme">3ème DSI</option>
+          </select>
+          <select class="form-select" id="sch-semestre" onchange="onScheduleChange()" style="width:90px">
+            <option value="S1">S1</option>
+            <option value="S2" selected>S2</option>
+          </select>
+          <button class="btn btn-primary" onclick="toggleEditSchedule()">✏️ Modifier</button>
+        </div>
+      </div>
+
+      <!-- Edit modal -->
+      <div class="card" id="edit-schedule-form" style="display:none;margin-bottom:20px">
+        <div class="section-title">✏️ Modifier une case</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;align-items:end">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Jour</label>
+            <select class="form-select" id="sch-edit-jour">
+              <option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Heure</label>
+            <select class="form-select" id="sch-edit-heure">
+              <option>08:00</option><option>09:30</option><option>11:00</option><option>13:30</option><option>15:00</option><option>16:30</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Matière</label>
+            <input class="form-input" id="sch-edit-matiere" placeholder="ex: Algorithmique"/>
+          </div>
+          <button class="btn btn-primary" onclick="saveScheduleCell()" style="height:42px">Sauvegarder</button>
+        </div>
+      </div>
+
+      <div class="card" style="overflow-x:auto">
+        <div class="schedule-grid" id="schedule-grid"></div>
+      </div>
+    </div>
+
+    <!-- ===== QUIZ ===== -->
+    <div class="page" id="page-quiz">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:20px;font-weight:700">Quiz de Révision 🧠</h2>
+        <p style="color:var(--muted);font-size:14px;margin-top:2px">Testez vos connaissances en DSI</p>
+      </div>
+      <div class="grid-2" style="align-items:start">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <div class="section-title" style="margin:0">Question du Moment</div>
+            <button class="btn btn-ghost" onclick="loadQuiz()" style="font-size:12px">🔄 Nouvelle question</button>
+          </div>
+          <div id="quiz-content">
+            <div class="quiz-question" id="quiz-q">Chargement...</div>
+            <div class="quiz-options" id="quiz-opts"></div>
+            <div class="quiz-explain" id="quiz-explain" style="display:none"></div>
+          </div>
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:13px;color:var(--muted)">Score: <span id="quiz-score" style="color:var(--green);font-weight:700">0</span> / <span id="quiz-total">0</span></div>
+            <button class="btn btn-primary" onclick="loadQuiz()" id="next-btn" style="display:none">Question suivante →</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Thèmes disponibles</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="padding:14px;border-radius:10px;background:var(--card2);border:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-weight:600;font-size:14px">🐍 Python & Algorithmique</span>
+                <span class="chip green">Actif</span>
+              </div>
+              <div class="progress-bar-wrap"><div class="progress-bar" style="width:70%"></div></div>
+            </div>
+            <div style="padding:14px;border-radius:10px;background:var(--card2);border:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-weight:600;font-size:14px">🗄️ Bases de Données</span>
+                <span class="chip blue">Actif</span>
+              </div>
+              <div class="progress-bar-wrap"><div class="progress-bar" style="width:55%"></div></div>
+            </div>
+            <div style="padding:14px;border-radius:10px;background:var(--card2);border:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-weight:600;font-size:14px">⚛️ React & Angular</span>
+                <span class="chip yellow">Actif</span>
+              </div>
+              <div class="progress-bar-wrap"><div class="progress-bar" style="width:40%"></div></div>
+            </div>
+            <div style="padding:14px;border-radius:10px;background:var(--card2);border:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-weight:600;font-size:14px">🌐 Réseaux & Sécurité</span>
+                <span class="chip green">Actif</span>
+              </div>
+              <div class="progress-bar-wrap"><div class="progress-bar" style="width:30%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PROFIL ===== -->
+    <div class="page" id="page-profil">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:20px;font-weight:700">Mon Profil</h2>
+      </div>
+      <div class="grid-2" style="align-items:start">
+        <div class="card">
+          <div style="text-align:center;padding:20px 0">
+            <div style="width:80px;height:80px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#000;margin:0 auto 16px" id="profil-avatar">Y</div>
+            <div style="font-size:20px;font-weight:700" id="profil-name">Yasmine Benali</div>
+            <div style="color:var(--muted);font-size:13px;margin-top:4px" id="profil-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d5acb4a6b8bcbbb095b1a6bcfbb0b1a0">[email&#160;protected]</a></div>
+            <div class="chip green" style="margin-top:10px" id="profil-matricule">DSI-000001</div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:8px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="background:var(--card2);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:22px;font-weight:800;color:var(--green)" id="profil-moy">—</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">Moyenne</div>
+              </div>
+              <div style="background:var(--card2);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:22px;font-weight:800;color:var(--blue)" id="profil-nb-notes">0</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">Notes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">Modifier mon profil</div>
+          <div class="form-group">
+            <label class="form-label">Nom</label>
+            <input class="form-input" id="edit-nom" placeholder="Votre nom"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prénom</label>
+            <input class="form-input" id="edit-prenom" placeholder="Votre prénom"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Niveau</label>
+            <select class="form-select">
+              <option selected>2ème DSI</option>
+              <option>1ère DSI</option>
+              <option>3ème DSI</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="saveProfile()">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// Prevent Cloudflare email obfuscation from breaking the page
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.__cf_email__').forEach(function(el) {
+    el.parentNode.removeChild(el);
+  });
+});
+
+// ============================================
+// STATE
+// ============================================
+let state = {
+  user: null,
+  notes: [],
+  courses: [],
+  quizScore: 0,
+  quizTotal: 0,
+  currentQuiz: null,
+};
+
+// ============================================
+// DEMO DATA — only used if API notes are empty
+// ============================================
+function initDemoData() {
+  // Only set demo courses (notes come from API per student)
+  state.courses = [
+    { id:1, nom:'Algorithmique Avancée', professeur:'Prof. Messaoudi', semestre:'S2', coefficient:3, couleur:'#22d3a0' },
+    { id:2, nom:'Bases de Données', professeur:'Prof. Khelifi', semestre:'S2', coefficient:2, couleur:'#60a5fa' },
+    { id:3, nom:'Développement Web', professeur:'Prof. Bouzid', semestre:'S2', coefficient:3, couleur:'#f472b6' },
+    { id:4, nom:'Réseaux Informatiques', professeur:'Prof. Hamdi', semestre:'S2', coefficient:2, couleur:'#fbbf24' },
+    { id:5, nom:'Architecture Logicielle', professeur:'Prof. Saidi', semestre:'S2', coefficient:2, couleur:'#a78bfa' },
+    { id:6, nom:'Intelligence Artificielle', professeur:'Prof. Zouari', semestre:'S2', coefficient:3, couleur:'#34d399' },
+  ];
+  // Notes start empty — loaded per-student from API
+  state.notes = [];
+}
+
+// ============================================
+// CONFIG
+// ============================================
+const API_URL = 'https://edudsi-backend-production.up.railway.app';
+
+// ============================================
+// AUTH
+// ============================================
+function switchTab(tab) {
+  document.querySelectorAll('.login-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('form-login').classList.toggle('active', tab==='login');
+  document.getElementById('form-register').classList.toggle('active', tab==='register');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { showErr('login-err','Remplissez tous les champs.'); return; }
+  const btn = document.querySelector('#form-login .login-btn');
+  btn.textContent = 'Connexion...'; btn.disabled = true;
+  try {
+    const res = await fetch(API_URL + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { showErr('login-err', data.message || 'Email ou mot de passe incorrect.'); return; }
+    localStorage.setItem('edudsi_token', data.token);
+    localStorage.setItem('edudsi_user', JSON.stringify(data.student));
+    state.user = data.student;
+    state.token = data.token;
+    enterApp();
+  } catch(e) {
+    showErr('login-err', 'Erreur réseau. Vérifiez votre connexion.');
+  } finally {
+    btn.textContent = 'Se connecter →'; btn.disabled = false;
+  }
+}
+
+async function doRegister() {
+  const nom = document.getElementById('reg-nom').value.trim();
+  const prenom = document.getElementById('reg-prenom').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const role = document.getElementById('reg-role') ? document.getElementById('reg-role').value : 'student';
+  if (!nom||!prenom||!email||!password) { showErr('reg-err','Remplissez tous les champs.'); return; }
+  if (password.length < 6) { showErr('reg-err','Mot de passe minimum 6 caractères.'); return; }
+  const btn = document.querySelector('#form-register .login-btn');
+  btn.textContent = 'Création...'; btn.disabled = true;
+  try {
+    const res = await fetch(API_URL + '/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nom, prenom, email, password, role })
+    });
+    const data = await res.json();
+    if (!res.ok) { showErr('reg-err', data.message || "Erreur lors de l'inscription."); return; }
+    localStorage.setItem('edudsi_token', data.token);
+    localStorage.setItem('edudsi_user', JSON.stringify(data.student));
+    state.user = data.student;
+    state.token = data.token;
+    enterApp();
+  } catch(e) {
+    showErr('reg-err', 'Erreur réseau. Vérifiez votre connexion.');
+  } finally {
+    btn.textContent = 'Créer mon compte →'; btn.disabled = false;
+  }
+}
+
+function checkAutoLogin() {
+  const token = localStorage.getItem('edudsi_token');
+  const user = localStorage.getItem('edudsi_user');
+  if (token && user) {
+    try { state.user = JSON.parse(user); state.token = token; enterApp(); } catch(e) {}
+  }
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display='none', 3000);
+}
+
+async function enterApp() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  initDemoData();
+  updateUserUI();
+  applyRoleUI();
+  renderDashboard();
+  renderCourses();
+  renderSchedule();
+  loadQuiz();
+  // Load real notes from API
+  await loadMyNotes();
+  renderNotes();
+  renderDashboard();
+}
+
+async function loadMyNotes() {
+  if(!state.token) return;
+  try {
+    const res = await fetch(API_URL + '/api/students/me', {
+      headers: { 'Authorization': 'Bearer ' + state.token }
+    });
+    if(res.ok) {
+      const data = await res.json();
+      // Always use API notes — each student has their own
+      state.notes = data.notes || [];
+    }
+  } catch(e) { console.log('Could not load notes from API:', e.message); }
+}
+
+function applyRoleUI() {
+  const role = state.user.role || 'student';
+  const roleLabels = { admin: '👑 Admin', teacher: '👨‍🏫 Enseignant', student: '🎓 Étudiant' };
+  const roleColors = { admin: 'var(--pink)', teacher: 'var(--blue)', student: 'var(--green)' };
+  // Show role badge in sidebar
+  const badge = document.getElementById('user-role-badge');
+  if (badge) {
+    badge.textContent = roleLabels[role] || roleLabels.student;
+    badge.style.color = roleColors[role] || roleColors.student;
+  }
+  // Hide admin-only nav items for non-admins
+  document.querySelectorAll('[data-role]').forEach(el => {
+    const required = el.getAttribute('data-role');
+    el.style.display = (role === required || role === 'admin') ? '' : 'none';
+  });
+}
+
+function doLogout() {
+  localStorage.removeItem('edudsi_token');
+  localStorage.removeItem('edudsi_user');
+  state.user = null; state.token = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+}
+
+function updateUserUI() {
+  const u = state.user;
+  const initials = (u.prenom[0]||'') + (u.nom[0]||'');
+  document.getElementById('sidebar-avatar').textContent = initials;
+  document.getElementById('sidebar-name').textContent = u.prenom + ' ' + u.nom[0] + '.';
+  document.getElementById('profil-avatar').textContent = initials;
+  document.getElementById('profil-name').textContent = u.prenom + ' ' + u.nom;
+  document.getElementById('profil-email').textContent = u.email;
+  document.getElementById('profil-matricule').textContent = u.matricule;
+  document.getElementById('edit-nom').value = u.nom;
+  document.getElementById('edit-prenom').value = u.prenom;
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  const titles = {
+    dashboard: 'Tableau de <span>bord</span>',
+    cours: 'Mes <span>Cours</span>',
+    notes: 'Mes <span>Notes</span>',
+    emploi: 'Emploi du <span>Temps</span>',
+    ai: 'Agent <span>IA</span>',
+    quiz: 'Quiz de <span>Révision</span>',
+    profil: 'Mon <span>Profil</span>',
+  };
+  document.getElementById('page-title').innerHTML = titles[id] || id;
+  if(id==='notes') renderNotes();
+  if(id==='profil') updateProfilStats();
+}
+
+// ============================================
+// STATS
+// ============================================
+function calcMoyenne() {
+  if(!state.notes.length) return 0;
+  const somme = state.notes.reduce((a,n) => a + n.note*(n.coefficient||1), 0);
+  const coeffs = state.notes.reduce((a,n) => a + (n.coefficient||1), 0);
+  return (somme/coeffs).toFixed(2);
+}
+
+// ============================================
+// DASHBOARD
+// ============================================
+function renderDashboard() {
+  const moy = calcMoyenne();
+  document.getElementById('stat-moyenne').textContent = moy;
+  document.getElementById('stat-cours').textContent = state.courses.length;
+  document.getElementById('stat-notes').textContent = state.notes.length;
+
+  // Bar chart
+  const bc = document.getElementById('bar-chart');
+  const last5 = state.notes.slice(-5);
+  bc.innerHTML = last5.map(n => `
+    <div class="bar-wrap">
+      <div class="bar-val">${n.note}</div>
+      <div class="bar" style="height:${(n.note/20)*100}px;background:${n.note>=14?'var(--grad)':n.note>=10?'rgba(251,191,36,0.6)':'rgba(248,113,113,0.6)'}"></div>
+      <div class="bar-label">${n.matiere.split(' ')[0]}</div>
+    </div>
+  `).join('');
+
+  // Recent notes table
+  const tbody = document.getElementById('dash-notes-tbody');
+  const recent = [...state.notes].slice(-5).reverse();
+  document.getElementById('dash-count').textContent = `${state.notes.length} au total`;
+  tbody.innerHTML = recent.map(n => `
+    <tr>
+      <td style="font-weight:500">${n.matiere}</td>
+      <td><span class="note-badge ${n.note>=14?'note-high':n.note>=10?'note-mid':'note-low'}">${n.note}/20</span></td>
+      <td style="color:var(--muted)">${n.coefficient}</td>
+      <td><span class="chip ${n.semestre==='S1'?'blue':'green'}">${n.semestre}</span></td>
+      <td style="color:${n.note>=14?'var(--green)':n.note>=10?'var(--yellow)':'var(--red)'};font-size:13px">
+        ${n.note>=16?'🌟 Excellent':n.note>=14?'✅ Très bien':n.note>=10?'⚠️ Passable':'❌ Insuffisant'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ============================================
+// COURSES
+// ============================================
+function renderCourses() {
+  const grid = document.getElementById('courses-grid');
+  grid.innerHTML = state.courses.map(c => `
+    <div class="course-card" style="border-left-color:${c.couleur}">
+      <div class="course-name">${c.nom}</div>
+      <div class="course-meta">👨‍🏫 ${c.professeur}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        <span class="course-badge" style="background:${c.couleur}20;color:${c.couleur}">${c.semestre}</span>
+        <span class="course-badge" style="background:rgba(255,255,255,0.05);color:var(--muted)">Coeff ${c.coefficient}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleAddCourse() {
+  const f = document.getElementById('add-course-form');
+  f.style.display = f.style.display==='none' ? 'block' : 'none';
+}
+
+function addCourse() {
+  const nom = document.getElementById('c-nom').value.trim();
+  const prof = document.getElementById('c-prof').value.trim();
+  if(!nom) return;
+  const colors = ['#22d3a0','#60a5fa','#f472b6','#fbbf24','#a78bfa','#34d399'];
+  state.courses.push({
+    id: Date.now(),
+    nom, professeur: prof||'—',
+    semestre: document.getElementById('c-sem').value,
+    coefficient: parseInt(document.getElementById('c-coeff').value)||1,
+    couleur: colors[Math.floor(Math.random()*colors.length)]
+  });
+  document.getElementById('c-nom').value = '';
+  document.getElementById('c-prof').value = '';
+  renderCourses();
+  toggleAddCourse();
+}
+
+// ============================================
+// NOTES
+// ============================================
+function renderNotes() {
+  const tbody = document.getElementById('notes-tbody');
+  document.getElementById('notes-count').textContent = `${state.notes.length} notes`;
+
+  tbody.innerHTML = state.notes.map(n => {
+    const nid = n._id || n.id;
+    const bc = n.note>=14?'note-high':n.note>=10?'note-mid':'note-low';
+    const fmt = v => v != null && v !== undefined ? `<span style="font-weight:600">${v}</span>/20` : '<span style="color:var(--muted)">—</span>';
+    return `<tr>
+      <td style="font-weight:500">${n.matiere}</td>
+      <td style="color:var(--blue)">${fmt(n.tp)}</td>
+      <td style="color:var(--purple)">${fmt(n.cours)}</td>
+      <td style="color:var(--yellow)">${fmt(n.examen)}</td>
+      <td><span class="note-badge ${bc}">${n.note}/20</span></td>
+      <td style="color:var(--muted);text-align:center">${n.coefficient}</td>
+      <td><span class="chip ${n.semestre==='S1'?'blue':'green'}">${n.semestre||'S1'}</span></td>
+      <td><button onclick="deleteNote('${nid}')" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:var(--red);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Outfit',sans-serif">🗑</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Aucune note ajoutée — utilisez le formulaire ci-dessus pour commencer !</td></tr>';
+
+  updateNoteStats();
+}
+
+function updateNoteStats() {
+  const moy = calcMoyenne();
+  const notes = state.notes;
+  document.getElementById('st-moy').textContent = moy > 0 ? moy+'/20' : '—';
+  document.getElementById('pb-moy').style.width = moy > 0 ? (moy/20*100)+'%' : '0%';
+  if(notes.length) {
+    document.getElementById('st-max').textContent = Math.max(...notes.map(n=>n.note))+'/20';
+    document.getElementById('st-min').textContent = Math.min(...notes.map(n=>n.note))+'/20';
+    const conseil = moy>=16?'🌟 Excellent ! Vous êtes dans le top de votre classe.':
+      moy>=14?'✅ Très bon niveau ! Continuez ainsi.':
+      moy>=10?'⚠️ Niveau correct, mais des efforts sont encore nécessaires.':
+      '🚨 Attention ! Consultez votre professeur rapidement.';
+    const conseilEl = document.getElementById('ai-conseil');
+    if(conseilEl) conseilEl.textContent = conseil;
+  }
+  document.getElementById('profil-nb-notes').textContent = notes.length;
+}
+
+// Live preview of calculated note
+['n-tp','n-cours','n-note'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', updateNotePreview);
+});
+
+function updateNotePreview() {
+  const tp = parseFloat(document.getElementById('n-tp').value) || null;
+  const cours = parseFloat(document.getElementById('n-cours').value) || null;
+  const examen = parseFloat(document.getElementById('n-note').value) || null;
+  const preview = document.getElementById('note-preview');
+  if(!preview) return;
+  if(tp===null && cours===null && examen===null) { preview.textContent = '—'; return; }
+  let sum = 0, weight = 0;
+  if(tp!==null) { sum += tp * 0.3; weight += 0.3; }
+  if(cours!==null) { sum += cours * 0.3; weight += 0.3; }
+  if(examen!==null) { sum += examen * 0.4; weight += 0.4; }
+  const avg = (sum / weight).toFixed(2);
+  preview.textContent = avg + '/20';
+  preview.style.color = avg >= 14 ? 'var(--green)' : avg >= 10 ? 'var(--yellow)' : 'var(--red)';
+}
+
+async function addNote() {
+  const matiere = document.getElementById('n-matiere').value.trim();
+  const tp      = document.getElementById('n-tp').value    !== '' ? parseFloat(document.getElementById('n-tp').value)    : null;
+  const cours   = document.getElementById('n-cours').value !== '' ? parseFloat(document.getElementById('n-cours').value) : null;
+  const examen  = document.getElementById('n-note').value  !== '' ? parseFloat(document.getElementById('n-note').value)  : null;
+
+  if(!matiere) { alert('⚠️ Entrez le nom de la matière'); return; }
+  if(tp===null && cours===null && examen===null) { alert('⚠️ Entrez au moins une note (TP, Cours ou Examen)'); return; }
+
+  // Calculate weighted average locally for display
+  let sum = 0, weight = 0;
+  if(tp!==null)    { sum += tp*0.3;    weight+=0.3; }
+  if(cours!==null) { sum += cours*0.3; weight+=0.3; }
+  if(examen!==null){ sum += examen*0.4;weight+=0.4; }
+  const note = parseFloat((sum/weight).toFixed(2));
+  const coefficient = parseInt(document.getElementById('n-coeff').value)||1;
+  const semestre = document.getElementById('n-sem').value;
+
+  const btn = document.querySelector('#page-notes .btn-primary');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Enregistrement...'; btn.disabled = true;
+
+  try {
+    const res = await fetch(API_URL + '/api/students/me/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.token },
+      body: JSON.stringify({ matiere, note, tp, cours, examen, coefficient, semestre })
+    });
+    if(res.ok) {
+      const notes = await res.json();
+      state.notes = notes;
+      // Clear form
+      document.getElementById('n-matiere').value = '';
+      document.getElementById('n-tp').value      = '';
+      document.getElementById('n-cours').value   = '';
+      document.getElementById('n-note').value    = '';
+      document.getElementById('note-preview').textContent = '—';
+      renderNotes(); renderDashboard();
+      // Success feedback
+      btn.textContent = '✅ Note enregistrée !';
+      btn.style.background = 'var(--green)';
+      setTimeout(() => { btn.textContent = origText; btn.style.background=''; }, 2000);
+    } else {
+      const err = await res.json();
+      alert('❌ ' + (err.message || 'Erreur lors de l\'enregistrement'));
+    }
+  } catch(e) {
+    // Offline fallback — save locally
+    state.notes.push({ id: Date.now(), matiere, note, tp, cours, examen, coefficient, semestre });
+    renderNotes(); renderDashboard();
+    btn.textContent = '⚠️ Sauvegardé localement';
+    setTimeout(() => { btn.textContent = origText; btn.style.background=''; }, 2500);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function deleteNote(id) {
+  try {
+    await fetch(API_URL + '/api/students/me/notes/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + state.token }
+    });
+  } catch(e) {}
+  state.notes = state.notes.filter(n => (n._id||n.id) !== id);
+  renderNotes(); renderDashboard();
+}
+
+// ============================================
+// SCHEDULE
+// ============================================
+const scheduleData = {
+  '1ere': {
+    'S1': [
+      ['Maths','Physique','—','Algo','Anglais'],
+      ['Physique','Maths','Algo','—','Maths'],
+      ['Algo','—','Maths','Physique','—'],
+      ['—','Algo','Physique','Maths','Algo'],
+      ['Anglais','Maths','—','Algo','Physique'],
+      ['Maths','Algo','Physique','Anglais','—'],
+    ],
+    'S2': [
+      ['Algo','BDD','—','Dev Web','Maths'],
+      ['Dev Web','Algo','BDD','—','Réseaux'],
+      ['Maths','Dev Web','—','Algo','BDD'],
+      ['—','Réseaux','Dev Web','Maths','—'],
+      ['BDD','—','Réseaux','Dev Web','Algo'],
+      ['Réseaux','Maths','Algo','BDD','Dev Web'],
+    ]
+  },
+  '2eme': {
+    'S1': [
+      ['Algo Avancée','BDD','—','Réseaux','Maths'],
+      ['Dev Web','Algo Avancée','BDD','—','Réseaux'],
+      ['Maths','Dev Web','—','Algo Avancée','BDD'],
+      ['—','Réseaux','Dev Web','Maths','—'],
+      ['BDD','—','Réseaux','Dev Web','Algo Avancée'],
+      ['Réseaux','Maths','Algo Avancée','BDD','Dev Web'],
+    ],
+    'S2': [
+      ['Algorithmique','BDD','—','Réseaux','Maths'],
+      ['Dev Web','Algo','BDD','—','Réseaux'],
+      ['Maths','Dev Web','—','Algo','BDD'],
+      ['—','Réseaux','Dev Web','Maths','—'],
+      ['BDD','—','Réseaux','Dev Web','Algo'],
+      ['Réseaux','Maths','Algo','BDD','Dev Web'],
+    ]
+  },
+  '3eme': {
+    'S1': [
+      ['Architecture','DevOps','—','IA','Gestion'],
+      ['IA','Architecture','DevOps','—','Sécurité'],
+      ['Gestion','IA','—','Architecture','DevOps'],
+      ['—','Sécurité','IA','Gestion','—'],
+      ['DevOps','—','Sécurité','IA','Architecture'],
+      ['Sécurité','Gestion','Architecture','DevOps','IA'],
+    ],
+    'S2': [
+      ['PFE','DevOps','—','IA','Gestion'],
+      ['IA','PFE','DevOps','—','Sécurité'],
+      ['Gestion','IA','—','PFE','DevOps'],
+      ['—','Sécurité','IA','Gestion','—'],
+      ['DevOps','—','Sécurité','IA','PFE'],
+      ['Sécurité','Gestion','PFE','DevOps','IA'],
+    ]
+  }
+};
+
+const courseColors = {
+  'Algorithmique':'#22d3a0','Algo':'#22d3a0','Algo Avancée':'#22d3a0',
+  'BDD':'#60a5fa','Dev Web':'#f472b6','Réseaux':'#fbbf24',
+  'Maths':'#a78bfa','Physique':'#34d399','Anglais':'#fb923c',
+  'Architecture':'#e879f9','DevOps':'#38bdf8','IA':'#4ade80',
+  'Gestion':'#facc15','Sécurité':'#f87171','PFE':'#a78bfa',
+  '—':null
+};
+
+function getCourseColor(name) {
+  if (courseColors[name]) return courseColors[name];
+  // Generate consistent color from name
+  const colors = ['#22d3a0','#60a5fa','#f472b6','#fbbf24','#a78bfa','#34d399','#fb923c','#38bdf8'];
+  let hash = 0;
+  for (let c of name) hash = c.charCodeAt(0) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function onScheduleChange() {
+  const classe = document.getElementById('sch-classe').value;
+  const semestre = document.getElementById('sch-semestre').value;
+  const labels = { '1ere':'1ère DSI', '2eme':'2ème DSI', '3eme':'3ème DSI' };
+  document.getElementById('sch-subtitle').textContent = `Semaine type — ${labels[classe]} ${semestre}`;
+  renderSchedule();
+}
+
+function toggleEditSchedule() {
+  const f = document.getElementById('edit-schedule-form');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveScheduleCell() {
+  const classe = document.getElementById('sch-classe').value;
+  const semestre = document.getElementById('sch-semestre').value;
+  const jour = document.getElementById('sch-edit-jour').value;
+  const heure = document.getElementById('sch-edit-heure').value;
+  const matiere = document.getElementById('sch-edit-matiere').value.trim();
+  if (!matiere) return;
+
+  const jours = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+  const heures = ['08:00','09:30','11:00','13:30','15:00','16:30'];
+  const ji = jours.indexOf(jour);
+  const hi = heures.indexOf(heure);
+
+  if (ji >= 0 && hi >= 0) {
+    scheduleData[classe][semestre][hi][ji] = matiere;
+    // Save to localStorage
+    localStorage.setItem('scheduleData', JSON.stringify(scheduleData));
+    renderSchedule();
+    document.getElementById('sch-edit-matiere').value = '';
+    // Show success
+    const btn = document.querySelector('#edit-schedule-form .btn-primary');
+    btn.textContent = '✅ Sauvegardé !';
+    setTimeout(() => btn.textContent = 'Sauvegarder', 2000);
+  }
+}
+
+function renderSchedule() {
+  const classe = document.getElementById('sch-classe')?.value || '2eme';
+  const semestre = document.getElementById('sch-semestre')?.value || 'S2';
+
+  // Load from localStorage if exists
+  const saved = localStorage.getItem('scheduleData');
+  const data = saved ? JSON.parse(saved) : scheduleData;
+
+  const jours = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+  const heures = ['08:00','09:30','11:00','13:30','15:00','16:30'];
+  const schedule = data[classe]?.[semestre] || scheduleData['2eme']['S2'];
+
+  const grid = document.getElementById('schedule-grid');
+  let html = '<div class="sch-header"></div>';
+  jours.forEach(j => html += `<div class="sch-header">${j}</div>`);
+
+  heures.forEach((h, hi) => {
+    html += `<div class="sch-time">${h}</div>`;
+    jours.forEach((_,ji) => {
+      const cours = schedule[hi]?.[ji] || '—';
+      const color = getCourseColor(cours);
+      html += `<div class="sch-cell">${color && cours !== '—' ? 
+        `<div class="sch-course" style="background:${color}18;color:${color};border:1px solid ${color}33">${cours}</div>` 
+        : ''}</div>`;
+    });
+  });
+
+  grid.style.gridTemplateColumns = `80px repeat(5,1fr)`;
+  grid.innerHTML = html;
+
+  // Auto-select student's class
+  const niveau = state?.user?.niveau || '';
+  if (niveau.includes('1')) document.getElementById('sch-classe').value = '1ere';
+  else if (niveau.includes('3')) document.getElementById('sch-classe').value = '3eme';
+  else document.getElementById('sch-classe').value = '2eme';
+}
+
+// Auto-login on page load
+window.addEventListener('load', checkAutoLogin);
+
+// ============================================
+// QUIZ
+// ============================================
+const quizBank = [
+  { q:"Quelle est la complexité de QuickSort en moyenne ?", opts:["O(n)","O(n log n)","O(n²)","O(log n)"], a:1, exp:"QuickSort : O(n log n) en moyenne, O(n²) dans le pire cas." },
+  { q:"Qu'est-ce qu'une clé étrangère en SQL ?", opts:["Clé de chiffrement","Référence vers une clé primaire d'une autre table","Index unique","Type de jointure"], a:1, exp:"FOREIGN KEY assure l'intégrité référentielle entre deux tables." },
+  { q:"Quel hook React gère les effets de bord ?", opts:["useState","useEffect","useContext","useRef"], a:1, exp:"useEffect s'exécute après le rendu pour les appels API, abonnements, etc." },
+  { q:"Commande pour créer un projet Angular ?", opts:["ng create","ng new mon-app","angular new","npx angular"], a:1, exp:"'ng new' est la commande CLI Angular pour créer un projet." },
+  { q:"Dans MongoDB, un enregistrement s'appelle :", opts:["Row","Record","Document","Tuple"], a:2, exp:"MongoDB stocke les données en documents JSON/BSON." },
+  { q:"TypeScript est :", opts:["Un langage compilé en C","Un superset typé de JavaScript","Un framework web","Une base de données"], a:1, exp:"TypeScript ajoute le typage statique à JavaScript et se compile en JS." },
+  { q:"Quelle méthode HTTP pour créer une ressource ?", opts:["GET","PUT","POST","DELETE"], a:2, exp:"POST est utilisé pour créer une nouvelle ressource dans une API REST." },
+  { q:"Le modèle OSI a combien de couches ?", opts:["4","5","6","7"], a:3, exp:"OSI : 7 couches (Physique, Liaison, Réseau, Transport, Session, Présentation, Application)." },
+];
+
+function loadQuiz() {
+  const q = quizBank[Math.floor(Math.random()*quizBank.length)];
+  state.currentQuiz = q;
+  document.getElementById('quiz-q').textContent = q.q;
+  document.getElementById('quiz-explain').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('quiz-opts').innerHTML = q.opts.map((opt,i) => `
+    <button class="quiz-opt" onclick="answerQuiz(${i},this)">${String.fromCharCode(65+i)}. ${opt}</button>
+  `).join('');
+}
+
+function answerQuiz(idx, btn) {
+  const q = state.currentQuiz;
+  if(!q) return;
+  document.querySelectorAll('.quiz-opt').forEach(b => b.onclick = null);
+  state.quizTotal++;
+  if(idx === q.a) {
+    btn.classList.add('correct');
+    state.quizScore++;
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.quiz-opt')[q.a].classList.add('correct');
+  }
+  document.getElementById('quiz-explain').textContent = '💡 ' + q.exp;
+  document.getElementById('quiz-explain').style.display = 'block';
+  document.getElementById('quiz-score').textContent = state.quizScore;
+  document.getElementById('quiz-total').textContent = state.quizTotal;
+  document.getElementById('next-btn').style.display = 'block';
+  document.getElementById('stat-quiz').textContent = state.quizScore;
+}
+
+// ============================================
+// PROFIL
+// ============================================
+function updateProfilStats() {
+  const moy = calcMoyenne();
+  document.getElementById('profil-moy').textContent = moy>0?moy:'—';
+  document.getElementById('profil-nb-notes').textContent = state.notes.length;
+}
+
+function saveProfile() {
+  const nom = document.getElementById('edit-nom').value.trim();
+  const prenom = document.getElementById('edit-prenom').value.trim();
+  if(nom) state.user.nom = nom;
+  if(prenom) state.user.prenom = prenom;
+  updateUserUI();
+  updateProfilStats();
+  // Show success feedback
+  const btn = document.querySelector('#page-profil .btn-primary');
+  const orig = btn.textContent;
+  btn.textContent = '✅ Sauvegardé !';
+  btn.style.background = 'var(--green)';
+  setTimeout(() => { btn.textContent = orig; }, 2000);
+}
+
+// ============================================
+// AI NOTE ANALYSIS
+// ============================================
+
+
+// ============================================
+// FORGOT PASSWORD
+// ============================================
+function showForgotPassword() {
+  const modal = document.getElementById('forgot-modal');
+  modal.style.display = 'flex';
+}
+
+function hideForgotPassword() {
+  document.getElementById('forgot-modal').style.display = 'none';
+  document.getElementById('forgot-msg').style.display = 'none';
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const msg = document.getElementById('forgot-msg');
+  if(!email) { 
+    msg.textContent = '⚠️ Entrez votre email.';
+    msg.style.color = 'var(--red)';
+    msg.style.display = 'block';
+    return; 
+  }
+  const btn = document.querySelector('#forgot-modal .login-btn');
+  btn.textContent = 'Envoi...'; btn.disabled = true;
+  try {
+    const res = await fetch(API_URL + '/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    msg.textContent = '✅ Si cet email existe, un lien vous a été envoyé.';
+    msg.style.color = 'var(--green)';
+    msg.style.display = 'block';
+  } catch(e) {
+    msg.textContent = '✅ Si cet email existe, un lien vous a été envoyé.';
+    msg.style.color = 'var(--green)';
+    msg.style.display = 'block';
+  } finally {
+    btn.textContent = 'Envoyer le lien'; btn.disabled = false;
+  }
+}
+
+// Auto-login on page load
+window.addEventListener('load', checkAutoLogin);
+</script>
+</body>
+</html>
